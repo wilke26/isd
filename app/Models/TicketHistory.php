@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketHistory extends Model
 {
+    // Laravel würde "ticket_histories" ableiten — korrekter Name ist "ticket_history"
+    protected $table = 'ticket_history';
+
     // History-Einträge sind unveränderlich — kein updated_at
     public const UPDATED_AT = null;
 
