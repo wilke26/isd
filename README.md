@@ -1,8 +1,6 @@
 # IT-Service-Desk
 
-> IHK-Abschlussprojekt · Fachinformatiker für Anwendungsentwicklung (FIAE)
-
-Ein vollständiges **IT-Service-Desk-System mit Asset-Management**, entwickelt als Abschlussprojekt zur IHK-Prüfung. Das System ermöglicht die zentrale Verwaltung von IT-Assets, die Bearbeitung von Support-Tickets sowie den Betrieb einer internen Wissensdatenbank.
+Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System ermöglicht die zentrale Verwaltung von IT-Assets, die Bearbeitung von Support-Tickets sowie den Betrieb einer internen Wissensdatenbank.
 
 ---
 
