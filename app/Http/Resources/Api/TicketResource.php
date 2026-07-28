@@ -15,23 +15,23 @@ class TicketResource extends JsonResource
             'id'          => $this->id,
             'title'       => $this->title,
             'description' => $this->description,
-            'status'      => [
+            'status'      => $this->status ? [
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
                 'color' => $this->status->color(),
-            ],
-            'priority' => [
+            ] : null,
+            'priority'    => $this->priority ? [
                 'value' => $this->priority->value,
                 'label' => $this->priority->label(),
                 'color' => $this->priority->color(),
-            ],
+            ] : null,
             'requester'   => new UserResource($this->whenLoaded('requester')),
             'assignee'    => new UserResource($this->whenLoaded('assignee')),
             'category'    => $this->whenLoaded('category', fn () => [
                 'id'   => $this->category->id,
                 'name' => $this->category->name,
             ]),
-            'asset' => $this->whenLoaded('asset', fn () => [
+            'asset'       => $this->whenLoaded('asset', fn () => [
                 'id'        => $this->asset->id,
                 'asset_tag' => $this->asset->asset_tag,
                 'name'      => $this->asset->name,

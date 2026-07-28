@@ -38,11 +38,11 @@ class KbArticleService
     {
         $article = KbArticle::create([
             ...$data,
+            'status'       => $data['status'] ?? ArticleStatus::Draft->value,  // ← neu
             'author_id'    => $author->id,
             'slug'         => Str::slug($data['title']),
             'published_at' => ($data['status'] ?? '') === ArticleStatus::Published->value ? now() : null,
         ]);
-
         if (! empty($data['tags'])) {
             $article->tags()->sync($data['tags']);
         }

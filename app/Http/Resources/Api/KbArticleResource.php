@@ -16,10 +16,10 @@ class KbArticleResource extends JsonResource
             'title'        => $this->title,
             'slug'         => $this->slug,
             'body'         => $this->body,
-            'status'       => [
+            'status'       => $this->status ? [
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
-            ],
+            ] : null,
             'author'       => new UserResource($this->whenLoaded('author')),
             'category'     => $this->whenLoaded('category', fn () => $this->category ? [
                 'id'   => $this->category->id,

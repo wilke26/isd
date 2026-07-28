@@ -64,14 +64,11 @@ class TicketService
     {
         return DB::transaction(function () use ($ticket, $actor, $data) {
             foreach (['status', 'priority', 'assignee_id'] as $field) {
-                if (isset($data[$field]) && (string) $ticket->{$field} !== (string) $data[$field]) {
-                    $this->recordHistory(
-                        $ticket,
-                        $actor,
-                        $field,
-                        (string) $ticket->{$field},
-                        (string) $data[$field],
-                    );
+                $currentValue = $ticket->{$field} instanceof \BackedEnum
+                    ? $ticket->{$field}->value
+                    : (string) $ticket->{$field};
+                if (isset($data[$field]) && $currentValue !== (string) $data[$field]) {
+                    $this->recordHistory($ticket, $actor, $field, $currentValue, (string) $data[$field]);
                 }
             }
 
