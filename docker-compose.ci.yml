@@ -1,0 +1,26 @@
+# Wird in CI zusätzlich zu docker-compose.yml geladen:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml ...
+#
+# Zweck: Build-Target auf "development" fixieren (für Composer-Dev-Dependencies/
+# PHPUnit) und Services per Profile abschalten, die in CI nicht gebraucht werden.
+# Auf das Entfernen von Hostport-Bindings (z.B. via "!reset") wird hier bewusst
+# verzichtet, da dieser YAML-Tag je nach Compose-Version bei mehrfachen Overlays
+# unzuverlässig ist. GitHub-Actions-Runner sind isoliert, daher ist eine doppelte
+# Portbindung unkritisch.
+
+services:
+  app:
+    build:
+      target: development
+    image: it-service-desk/app:dev-ci
+    # In CI läuft kein Dauerbetrieb; Container werden gezielt per `run` gestartet.
+    entrypoint: ["true"]
+
+  # In CI nicht benötigt — werden dadurch von "docker compose up" nicht mehr
+  # automatisch gestartet, sind aber bei Bedarf weiterhin per Name ansprechbar.
+  queue:
+    profiles: ["manual"]
+  scheduler:
+    profiles: ["manual"]
+  mailpit:
+    profiles: ["manual"]

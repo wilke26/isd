@@ -1,0 +1,130 @@
+name: it-service-desk
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: it-service-desk/app:dev
+    container_name: isd-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Bind-Mount des Projektcodes (delegated = bessere Performance auf macOS)
+      - .:/app:delegated
+      # Composer- und Vendor-Verzeichnis als benannte Volumes -> umgeht VirtioFS-Overhead
+      # bei vielen kleinen Dateien spürbar
+      - composer-cache:/tmp/composer-cache
+      - vendor-data:/app/vendor
+      - node-modules-data:/app/node_modules
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+      PHP_IDE_CONFIG: "serverName=isd.local"
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - isd-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  queue:
+    image: it-service-desk/app:dev
+    container_name: isd-queue
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --backoff=5 --max-time=3600
+    volumes:
+      - .:/app:delegated
+      - vendor-data:/app/vendor
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - isd-network
+
+  scheduler:
+    image: it-service-desk/app:dev
+    container_name: isd-scheduler
+    restart: unless-stopped
+    # Laravel-Scheduler im 60s-Takt statt klassischem Cron im Container
+    entrypoint: ["sh", "-c", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+    volumes:
+      - .:/app:delegated
+      - vendor-data:/app/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - isd-network
+
+  mysql:
+    image: mysql:8.4
+    container_name: isd-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3307"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-it_service_desk}
+      MYSQL_USER: ${DB_USERNAME:-isd_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - isd-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: isd-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - isd-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: isd-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # Web-UI
+      - "1025:1025" # SMTP
+    networks:
+      - isd-network
+
+networks:
+  isd-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  composer-cache:
+  vendor-data:
+  node-modules-data:
+  caddy-data:
+  caddy-config:

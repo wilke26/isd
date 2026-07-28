@@ -1,0 +1,34 @@
+{
+	frankenphp
+	# Worker-Mode für Octane erst aktivieren, wenn Service-Layer stabil läuft:
+	# frankenphp {
+	#     worker /app/public/index.php
+	# }
+	order php_server before file_server
+}
+
+# Lokale Domain statt localhost, damit mkcert ein vertrauenswürdiges Zertifikat ausstellen kann.
+# /etc/hosts auf dem Host: 127.0.0.1 isd.local
+isd.local {
+	root * /app/public
+	encode zstd br gzip
+
+	# Statische Assets direkt ausliefern, alles andere an Laravel
+	@notStatic {
+		not path /build/* /storage/* /favicon.ico
+	}
+
+	php_server
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# Fallback für reinen HTTP-Zugriff ohne mkcert (z. B. CI)
+:80 {
+	root * /app/public
+	encode zstd br gzip
+	php_server
+}

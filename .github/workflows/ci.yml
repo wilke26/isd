@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Verhindert parallele Runs auf demselben Branch/PR (spart CI-Minuten)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Werte für den im Compose-File konfigurierten MySQL-Service
+  DB_DATABASE: it_service_desk_test
+  DB_USERNAME: isd_user
+  DB_PASSWORD: secret
+  DB_ROOT_PASSWORD: rootsecret
+
+jobs:
+  # ---------------------------------------------------------------
+  # Job 1: Produktions-Image bauen — fängt kaputte Dockerfile-Änderungen
+  # frühzeitig ab, unabhängig vom Testlauf.
+  # ---------------------------------------------------------------
+  build-production-image:
+    name: Build production image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          push: false
+          load: true
+          tags: it-service-desk/app:prod-ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------
+  # Job 2: Tests gegen den echten Stack (FrankenPHP-Container + MySQL
+  # + Redis), über dieselbe docker-compose.yml wie lokal.
+  # ---------------------------------------------------------------
+  test:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+    needs: build-production-image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env for application
+        run: |
+          cp .env.example .env
+          {
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST=mysql"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE=${DB_DATABASE}"
+            echo "DB_USERNAME=${DB_USERNAME}"
+            echo "DB_PASSWORD=${DB_PASSWORD}"
+            echo "REDIS_HOST=redis"
+            echo "CACHE_STORE=redis"
+            echo "QUEUE_CONNECTION=redis"
+            echo "SESSION_DRIVER=redis"
+          } >> .env
+
+      - name: Create .env for Docker Compose
+        run: |
+          cp .env.docker.example .env.docker
+          echo "UID=1000" >> .env.docker
+          echo "GID=1000" >> .env.docker
+          echo "DB_DATABASE=${DB_DATABASE}" >> .env.docker
+          echo "DB_USERNAME=${DB_USERNAME}" >> .env.docker
+          echo "DB_PASSWORD=${DB_PASSWORD}" >> .env.docker
+          echo "DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}" >> .env.docker
+
+      - name: Build dev image (with dev dependencies)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: development
+          push: false
+          load: true
+          tags: it-service-desk/app:dev-ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start stack
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml up -d mysql redis
+
+      - name: Wait for MySQL to be healthy
+        run: |
+          timeout 60s bash -c \
+            'until docker inspect --format="{{.State.Health.Status}}" isd-mysql | grep -q healthy; do sleep 2; done'
+
+      - name: Install Composer dependencies
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate application key
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app php artisan key:generate
+
+      - name: Run database migrations
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app php artisan migrate --force
+
+      - name: Run PHPUnit with coverage
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm -e XDEBUG_MODE=coverage app \
+            php artisan test --coverage-clover=coverage.xml --log-junit=junit.xml
+
+      - name: Copy test results out of the volume
+        if: always()
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app sh -c "cat coverage.xml" > coverage.xml || true
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app sh -c "cat junit.xml" > junit.xml || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-results
+          path: |
+            coverage.xml
+            junit.xml
+          retention-days: 14
+
+      - name: Tear down stack
+        if: always()
+        run: |
+          docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml down -v
+
+  # ---------------------------------------------------------------
+  # Job 3: Statische Analyse / Codestyle (separat, damit ein
+  # Style-Fehler nicht den teureren Testlauf blockiert/verzögert)
+  # ---------------------------------------------------------------
+  static-analysis:
+    name: Static Analysis (Pint / PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run Laravel Pint (Codestyle, nur prüfen)
+        run: vendor/bin/pint --test
+
+      - name: Run PHPStan / Larastan
+        run: vendor/bin/phpstan analyse --memory-limit=512M
+        continue-on-error: true # auf false setzen, sobald das Projekt PHPStan-clean ist
