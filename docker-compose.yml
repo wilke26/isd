@@ -79,7 +79,7 @@ services:
     container_name: isd-mysql
     restart: unless-stopped
     ports:
-      - "3307:3307"
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-it_service_desk}
       MYSQL_USER: ${DB_USERNAME:-isd_user}
