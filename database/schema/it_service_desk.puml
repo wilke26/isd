@@ -1,0 +1,273 @@
+@startuml IT-Service-Desk Datenbankschema
+
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(x) <u>x</u>
+!define FK(x) <i>x</i>
+
+hide methods
+hide stereotypes
+skinparam linetype ortho
+skinparam classBackgroundColor #FEFEFE
+skinparam classBorderColor #AAAAAA
+skinparam classArrowColor #555555
+skinparam classFontSize 12
+skinparam classAttributeFontSize 11
+skinparam padding 4
+skinparam roundcorner 6
+
+' ─────────────────────────────────────────────
+' Auth & Benutzer
+' ─────────────────────────────────────────────
+
+TABLE(users, "users") {
+  PK(id): bigint unsigned AI
+  name: varchar(255)
+  email: varchar(255) UNIQUE
+  password: varchar(255)
+  email_verified_at: timestamp NULL
+  remember_token: varchar(100) NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(roles, "roles") {
+  PK(id): bigint unsigned AI
+  name: varchar(100)
+  slug: varchar(100) UNIQUE
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(permissions, "permissions") {
+  PK(id): bigint unsigned AI
+  FK(role_id): bigint unsigned
+  name: varchar(100)
+  slug: varchar(100)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(role_user, "role_user") {
+  FK(role_id): bigint unsigned
+  FK(user_id): bigint unsigned
+}
+
+' ─────────────────────────────────────────────
+' Asset-Management
+' ─────────────────────────────────────────────
+
+TABLE(asset_categories, "asset_categories") {
+  PK(id): bigint unsigned AI
+  FK(parent_id): bigint unsigned NULL
+  name: varchar(100)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(asset_statuses, "asset_statuses") {
+  PK(id): bigint unsigned AI
+  name: varchar(100)
+  color: varchar(7)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(assets, "assets") {
+  PK(id): bigint unsigned AI
+  FK(asset_category_id): bigint unsigned
+  FK(asset_status_id): bigint unsigned
+  FK(parent_asset_id): bigint unsigned NULL
+  asset_tag: varchar(50) UNIQUE
+  name: varchar(255)
+  serial_number: varchar(255) NULL
+  manufacturer: varchar(100) NULL
+  model: varchar(100) NULL
+  purchased_at: date NULL
+  warranty_until: date NULL
+  notes: text NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(asset_assignments, "asset_assignments") {
+  PK(id): bigint unsigned AI
+  FK(asset_id): bigint unsigned
+  FK(user_id): bigint unsigned
+  assigned_at: timestamp
+  returned_at: timestamp NULL
+  notes: text NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(licenses, "licenses") {
+  PK(id): bigint unsigned AI
+  name: varchar(255)
+  vendor: varchar(100)
+  product: varchar(255)
+  license_key: text NULL
+  seats_total: int unsigned
+  seats_used: int unsigned DEFAULT 0
+  expires_at: date NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(license_assignments, "license_assignments") {
+  PK(id): bigint unsigned AI
+  FK(license_id): bigint unsigned
+  FK(user_id): bigint unsigned NULL
+  FK(asset_id): bigint unsigned NULL
+  assigned_at: timestamp
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+' ─────────────────────────────────────────────
+' Ticketsystem
+' ─────────────────────────────────────────────
+
+TABLE(ticket_categories, "ticket_categories") {
+  PK(id): bigint unsigned AI
+  FK(parent_id): bigint unsigned NULL
+  name: varchar(100)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(tickets, "tickets") {
+  PK(id): bigint unsigned AI
+  FK(requester_id): bigint unsigned
+  FK(assignee_id): bigint unsigned NULL
+  FK(asset_id): bigint unsigned NULL
+  FK(category_id): bigint unsigned NULL
+  title: varchar(255)
+  description: text
+  status: enum('open','in_progress','resolved','closed')
+  priority: enum('low','medium','high','critical')
+  due_at: timestamp NULL
+  resolved_at: timestamp NULL
+  closed_at: timestamp NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(ticket_comments, "ticket_comments") {
+  PK(id): bigint unsigned AI
+  FK(ticket_id): bigint unsigned
+  FK(user_id): bigint unsigned
+  body: text
+  is_internal: tinyint(1) DEFAULT 0
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(ticket_attachments, "ticket_attachments") {
+  PK(id): bigint unsigned AI
+  FK(ticket_id): bigint unsigned
+  FK(user_id): bigint unsigned
+  filename: varchar(255)
+  path: varchar(500)
+  mime_type: varchar(100)
+  size: int unsigned
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(ticket_history, "ticket_history") {
+  PK(id): bigint unsigned AI
+  FK(ticket_id): bigint unsigned
+  FK(user_id): bigint unsigned
+  field: varchar(100)
+  old_value: text NULL
+  new_value: text NULL
+  created_at: timestamp
+}
+
+' ─────────────────────────────────────────────
+' Wissensdatenbank
+' ─────────────────────────────────────────────
+
+TABLE(kb_categories, "kb_categories") {
+  PK(id): bigint unsigned AI
+  FK(parent_id): bigint unsigned NULL
+  name: varchar(100)
+  slug: varchar(100) UNIQUE
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(kb_articles, "kb_articles") {
+  PK(id): bigint unsigned AI
+  FK(author_id): bigint unsigned
+  FK(category_id): bigint unsigned NULL
+  title: varchar(255)
+  slug: varchar(255) UNIQUE
+  body: longtext
+  status: enum('draft','published','archived')
+  published_at: timestamp NULL
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(tags, "tags") {
+  PK(id): bigint unsigned AI
+  name: varchar(50)
+  slug: varchar(50) UNIQUE
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+TABLE(kb_article_tag, "kb_article_tag") {
+  FK(kb_article_id): bigint unsigned
+  FK(tag_id): bigint unsigned
+}
+
+' ─────────────────────────────────────────────
+' Beziehungen — Auth & Rollen
+' ─────────────────────────────────────────────
+
+roles "1" --o{ "0..*" role_user : ""
+users "1" --o{ "0..*" role_user : ""
+roles "1" --o{ "0..*" permissions : "hat"
+
+' ─────────────────────────────────────────────
+' Beziehungen — Assets
+' ─────────────────────────────────────────────
+
+asset_categories "1" --o{ "0..*" assets : "kategorisiert"
+asset_categories "1" --o{ "0..*" asset_categories : "parent"
+asset_statuses "1" --o{ "1..*" assets : "hat Status"
+assets "1" --o{ "0..*" assets : "parent"
+assets "1" --o{ "0..*" asset_assignments : "zugewiesen an"
+users "1" --o{ "0..*" asset_assignments : "erhält"
+licenses "1" --o{ "0..*" license_assignments : "lizenziert"
+users "1" --o{ "0..*" license_assignments : "nutzt"
+assets "0..1" --o{ "0..*" license_assignments : "installiert auf"
+
+' ─────────────────────────────────────────────
+' Beziehungen — Tickets
+' ─────────────────────────────────────────────
+
+ticket_categories "1" --o{ "0..*" ticket_categories : "parent"
+ticket_categories "1" --o{ "0..*" tickets : "kategorisiert"
+users "1" --o{ "0..*" tickets : "stellt (requester)"
+users "1" --o{ "0..*" tickets : "bearbeitet (assignee)"
+assets "0..1" --o{ "0..*" tickets : "betrifft"
+tickets "1" --o{ "0..*" ticket_comments : "hat"
+tickets "1" --o{ "0..*" ticket_attachments : "hat"
+tickets "1" --o{ "0..*" ticket_history : "protokolliert"
+users "1" --o{ "0..*" ticket_comments : "schreibt"
+users "1" --o{ "0..*" ticket_attachments : "lädt hoch"
+
+' ─────────────────────────────────────────────
+' Beziehungen — Wissensdatenbank
+' ─────────────────────────────────────────────
+
+kb_categories "1" --o{ "0..*" kb_categories : "parent"
+kb_categories "1" --o{ "0..*" kb_articles : "enthält"
+users "1" --o{ "0..*" kb_articles : "verfasst"
+kb_articles "1" --o{ "0..*" kb_article_tag : ""
+tags "1" --o{ "0..*" kb_article_tag : ""
+
+@enduml
