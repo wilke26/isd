@@ -10,8 +10,20 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
+/**
+ * Class KbArticleService
+ *
+ * Provides business logic for managing knowledge base articles.
+ */
 class KbArticleService
 {
+    /**
+     * List knowledge base articles with optional filters.
+     *
+     * @param User $user
+     * @param array<string, mixed> $filters
+     * @return LengthAwarePaginator
+     */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
         $canSeeDrafts = $user->hasRole('admin') || $user->hasRole('agent');
@@ -29,11 +41,24 @@ class KbArticleService
             ->paginate($filters['per_page'] ?? 15);
     }
 
+    /**
+     * Find an article by its ID or throw a ModelNotFoundException.
+     *
+     * @param int $id
+     * @return KbArticle
+     */
     public function findOrFail(int $id): KbArticle
     {
         return KbArticle::with(['author', 'category', 'tags'])->findOrFail($id);
     }
 
+    /**
+     * Create a new knowledge base article.
+     *
+     * @param User $author
+     * @param array<string, mixed> $data
+     * @return KbArticle
+     */
     public function create(User $author, array $data): KbArticle
     {
         $article = KbArticle::create([
@@ -50,6 +75,13 @@ class KbArticleService
         return $article->load(['author', 'category', 'tags']);
     }
 
+    /**
+     * Update an existing knowledge base article.
+     *
+     * @param KbArticle $article
+     * @param array<string, mixed> $data
+     * @return KbArticle
+     */
     public function update(KbArticle $article, array $data): KbArticle
     {
         if (isset($data['title'])) {
