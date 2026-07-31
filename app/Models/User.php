@@ -12,40 +12,25 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * Class User
- *
- * Represents an application user within the system.
+ * @mixin IdeHelperUser
  */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    /** @var list<string> */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
+    /** @var list<string> */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -56,65 +41,35 @@ class User extends Authenticatable
 
     // ─── Rollen & Berechtigungen ───────────────────────────────────
 
-    /**
-     * Get the roles assigned to the user.
-     *
-     * @return BelongsToMany
-     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
     }
 
-    /**
-     * Check if the user has a role with the given slug.
-     *
-     * @param string $slug
-     * @return bool
-     */
     public function hasRole(string $slug): bool
     {
         return $this->roles->contains('slug', $slug);
     }
 
-    /**
-     * Check if the user has a permission with the given slug.
-     *
-     * @param string $slug
-     * @return bool
-     */
     public function hasPermission(string $slug): bool
     {
-        return $this->roles->flatMap->permissions->contains('slug', $slug);
+        return $this->roles
+            ->flatMap(fn (Role $role) => $role->permissions)
+            ->contains('slug', $slug);
     }
 
     // ─── Assets ───────────────────────────────────────────────────
 
-    /**
-     * Get the asset assignments for the user.
-     *
-     * @return HasMany
-     */
     public function assetAssignments(): HasMany
     {
         return $this->hasMany(AssetAssignment::class);
     }
 
-    /**
-     * Get the current asset assignments for the user.
-     *
-     * @return HasMany
-     */
     public function currentAssets(): HasMany
     {
         return $this->hasMany(AssetAssignment::class)->whereNull('returned_at');
     }
 
-    /**
-     * Get the license assignments for the user.
-     *
-     * @return HasMany
-     */
     public function licenseAssignments(): HasMany
     {
         return $this->hasMany(LicenseAssignment::class);
@@ -122,31 +77,18 @@ class User extends Authenticatable
 
     // ─── Tickets ──────────────────────────────────────────────────
 
-    /**
-     * Get the tickets that this user requested.
-     *
-     * @return HasMany
-     */
+    /** Tickets, die dieser User erstellt hat */
     public function requestedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'requester_id');
     }
 
-    /**
-     * Get the tickets that are assigned to this user.
-     *
-     * @return HasMany
-     */
+    /** Tickets, die diesem User zugewiesen sind */
     public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assignee_id');
     }
 
-    /**
-     * Get the ticket comments made by the user.
-     *
-     * @return HasMany
-     */
     public function ticketComments(): HasMany
     {
         return $this->hasMany(TicketComment::class);
@@ -154,11 +96,6 @@ class User extends Authenticatable
 
     // ─── Wissensdatenbank ─────────────────────────────────────────
 
-    /**
-     * Get the knowledge base articles authored by the user.
-     *
-     * @return HasMany
-     */
     public function kbArticles(): HasMany
     {
         return $this->hasMany(KbArticle::class, 'author_id');

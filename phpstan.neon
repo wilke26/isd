@@ -8,6 +8,14 @@ parameters:
         - database
         - routes
 
+    # Ide-Helper generiert IdeHelperXxx-Klassen mit den echten, aus casts() und
+    # Relationen abgeleiteten Property-Typen. @mixin-Tags in den Models verweisen
+    # darauf — PHPStan muss die Datei aber explizit "scannen" (nicht analysieren),
+    # sonst bleiben die referenzierten Klassen unauffindbar und der Mixin wird
+    # stillschweigend ignoriert.
+    scanFiles:
+        - _ide_helper_models.php
+
     # Startlevel bewusst moderat (0-9 möglich). Bei einem neuen Projekt empfiehlt
     # es sich, mit einer niedrigeren Stufe zu beginnen und sie schrittweise zu
     # erhöhen, statt direkt mit Level 8/9 anzufangen und von Fehlern überflutet
@@ -15,19 +23,12 @@ parameters:
     level: 5
 
     excludePaths:
-        - app/Console/Kernel.php
+        - app/Console/Kernel.php (?)
         - database/migrations/*
-
-    # Laravel-typische "magische" Aufrufe (z.B. dynamische Eloquent-Attribute,
-    # Facade-Methoden) erzeugen ohne Larastan viele False Positives. Die
-    # extension.neon oben deckt das Meiste bereits ab; folgende Optionen
-    # reduzieren zusätzliches Rauschen in der Anfangsphase:
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
 
     ignoreErrors:
         # Beispiel: Policies erhalten teils ein nullable $user (Guest-Zugriffe),
         # was Larastan in einigen Laravel-Versionen falsch typisiert.
         # - '#Parameter \#1 \$user of method .*Policy#'
 
-    tmpDir: build/phpstan
+    tmpDir: /tmp/phpstan

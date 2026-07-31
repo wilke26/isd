@@ -73,8 +73,14 @@ class AssetService
             ->update(['returned_at' => now()]);
     }
 
+    /**
+     * @return Collection<int, AssetAssignment>
+     */
     public function assignmentHistory(Asset $asset): Collection
     {
-        return $asset->assignments()->with('user')->latest('assigned_at')->get();
+        /** @var Collection<int, AssetAssignment> $assignments */
+        $assignments = $asset->assignments()->with('user')->latest('assigned_at')->get();
+
+        return $assignments;
     }
 }

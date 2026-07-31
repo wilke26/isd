@@ -7,6 +7,9 @@ namespace App\Http\Resources\Api;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\TicketComment
+ */
 class TicketCommentResource extends JsonResource
 {
     public function toArray(Request $request): array

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
@@ -11,19 +12,11 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Class TicketService
- *
- * Provides business logic for managing tickets.
- */
 class TicketService
 {
     /**
-     * Get a paginated list of tickets based on user role and filters.
-     *
-     * @param User $user
-     * @param array<string, mixed> $filters
-     * @return LengthAwarePaginator
+     * Gefilterte, paginierte Ticket-Liste.
+     * Agents sehen alle Tickets, normale User nur ihre eigenen.
      */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
@@ -40,12 +33,6 @@ class TicketService
         return $query->paginate($filters['per_page'] ?? 15);
     }
 
-    /**
-     * Find a ticket by its ID with all related data.
-     *
-     * @param int $id
-     * @return Ticket
-     */
     public function findOrFail(int $id): Ticket
     {
         return Ticket::with([
@@ -59,13 +46,6 @@ class TicketService
         ])->findOrFail($id);
     }
 
-    /**
-     * Create a new ticket.
-     *
-     * @param User $requester
-     * @param array<string, mixed> $data
-     * @return Ticket
-     */
     public function create(User $requester, array $data): Ticket
     {
         return DB::transaction(function () use ($requester, $data) {
@@ -73,6 +53,11 @@ class TicketService
                 ...$data,
                 'requester_id' => $requester->id,
                 'status'       => TicketStatus::Open,
+                // Explizit setzen statt auf den DB-Default zu vertrauen — Eloquent
+                // liest server-seitige Defaults nicht automatisch ins frische
+                // In-Memory-Objekt zurück, das würde sonst $ticket->priority === null
+                // liefern, obwohl die Datenbank korrekt 'medium' gespeichert hat.
+                'priority'     => $data['priority'] ?? TicketPriority::Medium,
             ]);
 
             $this->recordHistory($ticket, $requester, 'status', null, TicketStatus::Open->value);
@@ -81,14 +66,6 @@ class TicketService
         });
     }
 
-    /**
-     * Update an existing ticket.
-     *
-     * @param Ticket $ticket
-     * @param User $actor
-     * @param array<string, mixed> $data
-     * @return Ticket
-     */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
         return DB::transaction(function () use ($ticket, $actor, $data) {
@@ -96,6 +73,7 @@ class TicketService
                 $currentValue = $ticket->{$field} instanceof \BackedEnum
                     ? $ticket->{$field}->value
                     : (string) $ticket->{$field};
+
                 if (isset($data[$field]) && $currentValue !== (string) $data[$field]) {
                     $this->recordHistory($ticket, $actor, $field, $currentValue, (string) $data[$field]);
                 }
@@ -114,15 +92,6 @@ class TicketService
         });
     }
 
-    /**
-     * Add a comment to a ticket.
-     *
-     * @param Ticket $ticket
-     * @param User $author
-     * @param string $body
-     * @param bool $isInternal
-     * @return void
-     */
     public function addComment(Ticket $ticket, User $author, string $body, bool $isInternal = false): void
     {
         $ticket->comments()->create([
@@ -132,16 +101,6 @@ class TicketService
         ]);
     }
 
-    /**
-     * Record a change in the ticket history.
-     *
-     * @param Ticket $ticket
-     * @param User $actor
-     * @param string $field
-     * @param string|null $old
-     * @param string|null $new
-     * @return void
-     */
     private function recordHistory(Ticket $ticket, User $actor, string $field, ?string $old, ?string $new): void
     {
         TicketHistory::create([

@@ -7,6 +7,9 @@ namespace App\Http\Resources\Api;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Ticket
+ */
 class TicketResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -15,16 +18,16 @@ class TicketResource extends JsonResource
             'id'          => $this->id,
             'title'       => $this->title,
             'description' => $this->description,
-            'status'      => $this->status ? [
+            'status'      => [
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
                 'color' => $this->status->color(),
-            ] : null,
-            'priority'    => $this->priority ? [
+            ],
+            'priority'    => [
                 'value' => $this->priority->value,
                 'label' => $this->priority->label(),
                 'color' => $this->priority->color(),
-            ] : null,
+            ],
             'requester'   => new UserResource($this->whenLoaded('requester')),
             'assignee'    => new UserResource($this->whenLoaded('assignee')),
             'category'    => $this->whenLoaded('category', fn () => [

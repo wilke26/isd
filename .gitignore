@@ -26,3 +26,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .env.docker
+_ide_helper_models.php
+*.pem
+*.key
+!storage/*.key
