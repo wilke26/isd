@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAssetRequest;
 use App\Http\Resources\Api\AssetResource;
+use App\Models\Asset;
 use App\Models\User;
 use App\Services\AssetService;
 use Illuminate\Http\JsonResponse;
@@ -21,8 +22,11 @@ class AssetController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Asset::class);
+
         $assets = $this->assetService->list(
-            $request->only(['category_id', 'status_id', 'search', 'per_page']),
+            user: $request->user(),
+            filters: $request->only(['category_id', 'status_id', 'search', 'per_page']),
         );
 
         return AssetResource::collection($assets);
@@ -30,6 +34,8 @@ class AssetController extends Controller
 
     public function store(StoreAssetRequest $request): JsonResponse
     {
+        $this->authorize('create', Asset::class);
+
         $asset = $this->assetService->create($request->validated());
 
         return response()->json(new AssetResource($asset), 201);
@@ -37,14 +43,28 @@ class AssetController extends Controller
 
     public function show(int $id): AssetResource
     {
-        return new AssetResource($this->assetService->findOrFail($id));
+        $asset = $this->assetService->findOrFail($id);
+        $this->authorize('view', $asset);
+
+        return new AssetResource($asset);
     }
 
     public function update(StoreAssetRequest $request, int $id): AssetResource
     {
         $asset = $this->assetService->findOrFail($id);
+        $this->authorize('update', $asset);
 
         return new AssetResource($this->assetService->update($asset, $request->validated()));
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $asset = $this->assetService->findOrFail($id);
+        $this->authorize('delete', $asset);
+
+        $this->assetService->delete($asset);
+
+        return response()->json(['message' => "Asset {$asset->asset_tag} wurde gelöscht."]);
     }
 
     public function assign(Request $request, int $id): JsonResponse
@@ -54,7 +74,9 @@ class AssetController extends Controller
         ]);
 
         $asset = $this->assetService->findOrFail($id);
-        $user  = User::findOrFail($request->integer('user_id'));
+        $this->authorize('assign', $asset);
+
+        $user = User::findOrFail($request->integer('user_id'));
 
         $this->assetService->assign($asset, $user);
 
@@ -64,6 +86,8 @@ class AssetController extends Controller
     public function unassign(int $id): JsonResponse
     {
         $asset = $this->assetService->findOrFail($id);
+        $this->authorize('assign', $asset);
+
         $this->assetService->unassign($asset);
 
         return response()->json(['message' => "Zuweisung für {$asset->asset_tag} aufgehoben."]);
@@ -71,7 +95,9 @@ class AssetController extends Controller
 
     public function history(int $id): JsonResponse
     {
-        $asset       = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findOrFail($id);
+        $this->authorize('view', $asset);
+
         $assignments = $this->assetService->assignmentHistory($asset);
 
         return response()->json($assignments->map(fn ($a) => [

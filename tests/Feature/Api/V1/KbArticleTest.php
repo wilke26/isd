@@ -157,15 +157,26 @@ class KbArticleTest extends TestCase
 
     // ─── Destroy ──────────────────────────────────────────────────
 
-    public function test_agent_can_delete_article(): void
+    public function test_agent_can_delete_own_article(): void
     {
-        $this->actingAsAgent();
-        $article = KbArticle::factory()->create();
+        $agent   = $this->actingAsAgent();
+        $article = KbArticle::factory()->create(['author_id' => $agent->id]);
 
         $this->deleteJson("/api/v1/kb/articles/{$article->id}")
             ->assertOk();
 
         $this->assertSoftDeleted('kb_articles', ['id' => $article->id]);
+    }
+
+    public function test_agent_cannot_delete_others_article(): void
+    {
+        $this->actingAsAgent();
+        $article = KbArticle::factory()->create(); // Autor ist ein anderer, zufälliger User
+
+        $this->deleteJson("/api/v1/kb/articles/{$article->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('kb_articles', ['id' => $article->id, 'deleted_at' => null]);
     }
 
     public function test_unauthenticated_user_cannot_access_kb(): void

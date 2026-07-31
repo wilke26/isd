@@ -21,6 +21,8 @@ class TicketController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', \App\Models\Ticket::class);
+
         $tickets = $this->ticketService->list(
             user: $request->user(),
             filters: $request->only(['status', 'priority', 'assignee_id', 'search', 'per_page']),
@@ -31,6 +33,8 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): JsonResponse
     {
+        $this->authorize('create', \App\Models\Ticket::class);
+
         $ticket = $this->ticketService->create(
             requester: $request->user(),
             data: $request->validated(),
@@ -39,14 +43,18 @@ class TicketController extends Controller
         return response()->json(new TicketResource($ticket), 201);
     }
 
-    public function show(int $id): TicketResource
+    public function show(Request $request, int $id): TicketResource
     {
-        return new TicketResource($this->ticketService->findOrFail($id));
+        $ticket = $this->ticketService->findOrFail($id);
+        $this->authorize('view', $ticket);
+
+        return new TicketResource($ticket);
     }
 
     public function update(UpdateTicketRequest $request, int $id): TicketResource
     {
         $ticket = $this->ticketService->findOrFail($id);
+        $this->authorize('update', $ticket);
 
         return new TicketResource(
             $this->ticketService->update($ticket, $request->user(), $request->validated()),
@@ -60,13 +68,16 @@ class TicketController extends Controller
             'is_internal' => ['boolean'],
         ]);
 
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket     = $this->ticketService->findOrFail($id);
+        $isInternal = $request->boolean('is_internal');
+
+        $this->authorize($isInternal ? 'commentInternally' : 'commentPublicly', $ticket);
 
         $this->ticketService->addComment(
             ticket: $ticket,
             author: $request->user(),
             body: $request->string('body')->toString(),
-            isInternal: $request->boolean('is_internal'),
+            isInternal: $isInternal,
         );
 
         return response()->json(['message' => 'Kommentar hinzugefügt.'], 201);

@@ -39,7 +39,16 @@ class TicketResource extends JsonResource
                 'asset_tag' => $this->asset->asset_tag,
                 'name'      => $this->asset->name,
             ]),
-            'comments'    => TicketCommentResource::collection($this->whenLoaded('comments')),
+            'comments'    => $this->whenLoaded('comments', function () use ($request) {
+                $viewer  = $request->user();
+                $isStaff = $viewer && ($viewer->hasRole('admin') || $viewer->hasRole('agent'));
+
+                $comments = $isStaff
+                    ? $this->comments
+                    : $this->comments->where('is_internal', false)->values();
+
+                return TicketCommentResource::collection($comments);
+            }),
             'attachments' => TicketAttachmentResource::collection($this->whenLoaded('attachments')),
             'history'     => TicketHistoryResource::collection($this->whenLoaded('history')),
             'due_at'      => $this->due_at?->toIso8601String(),

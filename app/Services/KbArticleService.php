@@ -9,27 +9,23 @@ use App\Models\KbArticle;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
-/**
- * Class KbArticleService
- *
- * Provides business logic for managing knowledge base articles.
- */
 class KbArticleService
 {
-    /**
-     * List knowledge base articles with optional filters.
-     *
-     * @param User $user
-     * @param array<string, mixed> $filters
-     * @return LengthAwarePaginator
-     */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
-        $canSeeDrafts = $user->hasRole('admin') || $user->hasRole('agent');
+        $isStaff = $user->hasRole('admin') || $user->hasRole('agent');
 
         return KbArticle::with(['author', 'category', 'tags'])
-            ->when(! $canSeeDrafts, fn ($q) => $q->where('status', ArticleStatus::Published))
+            ->when(! $isStaff, function ($q) use ($user) {
+                // Nicht-Staff sieht veröffentlichte Artikel sowie die eigenen
+                // (unabhängig vom Status — Entwurf, eingereicht, archiviert).
+                $q->where(function ($q2) use ($user) {
+                    $q2->where('status', ArticleStatus::Published)
+                       ->orWhere('author_id', $user->id);
+                });
+            })
             ->when(isset($filters['category_id']), fn ($q) => $q->where('category_id', $filters['category_id']))
             ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['tag']), fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('slug', $filters['tag'])))
@@ -41,33 +37,32 @@ class KbArticleService
             ->paginate($filters['per_page'] ?? 15);
     }
 
-    /**
-     * Find an article by its ID or throw a ModelNotFoundException.
-     *
-     * @param int $id
-     * @return KbArticle
-     */
     public function findOrFail(int $id): KbArticle
     {
         return KbArticle::with(['author', 'category', 'tags'])->findOrFail($id);
     }
 
     /**
-     * Create a new knowledge base article.
-     *
-     * @param User $author
-     * @param array<string, mixed> $data
-     * @return KbArticle
+     * Erstellt einen Artikel. Nicht-Staff-Benutzer können ausschließlich Entwürfe
+     * anlegen — ein direktes Veröffentlichen am Redaktionsworkflow vorbei ist
+     * für sie nicht möglich, unabhängig davon, was im Request mitgeschickt wird.
      */
     public function create(User $author, array $data): KbArticle
     {
+        $isStaff = $author->hasRole('admin') || $author->hasRole('agent');
+
+        $status = $isStaff && isset($data['status'])
+            ? ArticleStatus::from($data['status'])
+            : ArticleStatus::Draft;
+
         $article = KbArticle::create([
             ...$data,
-            'status'       => $data['status'] ?? ArticleStatus::Draft->value,  // ← neu
             'author_id'    => $author->id,
-            'slug'         => Str::slug($data['title']),
-            'published_at' => ($data['status'] ?? '') === ArticleStatus::Published->value ? now() : null,
+            'slug'         => $this->uniqueSlug($data['title']),
+            'status'       => $status,
+            'published_at' => $status === ArticleStatus::Published ? now() : null,
         ]);
+
         if (! empty($data['tags'])) {
             $article->tags()->sync($data['tags']);
         }
@@ -75,17 +70,10 @@ class KbArticleService
         return $article->load(['author', 'category', 'tags']);
     }
 
-    /**
-     * Update an existing knowledge base article.
-     *
-     * @param KbArticle $article
-     * @param array<string, mixed> $data
-     * @return KbArticle
-     */
     public function update(KbArticle $article, array $data): KbArticle
     {
-        if (isset($data['title'])) {
-            $data['slug'] = Str::slug($data['title']);
+        if (isset($data['title']) && $data['title'] !== $article->title) {
+            $data['slug'] = $this->uniqueSlug($data['title'], $article->id);
         }
 
         if (
@@ -103,5 +91,69 @@ class KbArticleService
         }
 
         return $article->fresh(['author', 'category', 'tags']);
+    }
+
+    /** Entwurf zur redaktionellen Prüfung einreichen (nur aus dem Draft-Status) */
+    public function submit(KbArticle $article): KbArticle
+    {
+        if ($article->status !== ArticleStatus::Draft) {
+            throw ValidationException::withMessages([
+                'status' => ['Nur Entwürfe können zur Prüfung eingereicht werden.'],
+            ]);
+        }
+
+        $article->update(['status' => ArticleStatus::Submitted]);
+
+        return $article->fresh();
+    }
+
+    /** Artikel veröffentlichen (aus submitted oder draft, z.B. bei Staff-Eigenautorschaft) */
+    public function publish(KbArticle $article): KbArticle
+    {
+        if (in_array($article->status, [ArticleStatus::Published, ArticleStatus::Archived], true)) {
+            throw ValidationException::withMessages([
+                'status' => ['Artikel ist bereits veröffentlicht oder archiviert.'],
+            ]);
+        }
+
+        $article->update([
+            'status'       => ArticleStatus::Published,
+            'published_at' => now(),
+        ]);
+
+        return $article->fresh();
+    }
+
+    /** Veröffentlichten Artikel archivieren */
+    public function archive(KbArticle $article): KbArticle
+    {
+        if ($article->status !== ArticleStatus::Published) {
+            throw ValidationException::withMessages([
+                'status' => ['Nur veröffentlichte Artikel können archiviert werden.'],
+            ]);
+        }
+
+        $article->update(['status' => ArticleStatus::Archived]);
+
+        return $article->fresh();
+    }
+
+    /** Slug eindeutig machen: "titel", "titel-2", "titel-3", ... */
+    private function uniqueSlug(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title);
+        $slug = $base;
+        $i    = 2;
+
+        while (
+            KbArticle::where('slug', $slug)
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$base}-{$i}";
+            $i++;
+        }
+
+        return $slug;
     }
 }

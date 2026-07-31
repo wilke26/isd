@@ -14,11 +14,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Öffentliche Auth-Routen
 Route::prefix('v1')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login']);
 
-    // Alle weiteren Routen benötigen Authentifizierung via Sanctum
     Route::middleware('auth:sanctum')->group(function () {
 
         // Auth
@@ -37,6 +35,7 @@ Route::prefix('v1')->group(function () {
         Route::post('assets',                       [AssetController::class, 'store']);
         Route::get('assets/{id}',                   [AssetController::class, 'show']);
         Route::patch('assets/{id}',                 [AssetController::class, 'update']);
+        Route::delete('assets/{id}',                [AssetController::class, 'destroy']);
         Route::post('assets/{id}/assign',           [AssetController::class, 'assign']);
         Route::delete('assets/{id}/assign',         [AssetController::class, 'unassign']);
         Route::get('assets/{id}/history',           [AssetController::class, 'history']);
@@ -47,5 +46,8 @@ Route::prefix('v1')->group(function () {
         Route::get('kb/articles/{id}',              [KbArticleController::class, 'show']);
         Route::patch('kb/articles/{id}',            [KbArticleController::class, 'update']);
         Route::delete('kb/articles/{id}',           [KbArticleController::class, 'destroy']);
+        Route::post('kb/articles/{id}/submit',      [KbArticleController::class, 'submit']);
+        Route::post('kb/articles/{id}/publish',     [KbArticleController::class, 'publish']);
+        Route::post('kb/articles/{id}/archive',     [KbArticleController::class, 'archive']);
     });
 });

@@ -13,9 +13,17 @@ use Illuminate\Support\Facades\DB;
 
 class AssetService
 {
-    public function list(array $filters = []): LengthAwarePaginator
+    public function list(User $user, array $filters = []): LengthAwarePaginator
     {
+        $isStaff = $user->hasRole('admin') || $user->hasRole('agent');
+
         return Asset::with(['category', 'status', 'currentAssignment.user'])
+            ->when(! $isStaff, function ($q) use ($user) {
+                // Requester sieht nur die ihm aktuell zugewiesenen Assets
+                $q->whereHas('assignments', function ($q2) use ($user) {
+                    $q2->where('user_id', $user->id)->whereNull('returned_at');
+                });
+            })
             ->when(isset($filters['category_id']), fn ($q) => $q->where('asset_category_id', $filters['category_id']))
             ->when(isset($filters['status_id']), fn ($q) => $q->where('asset_status_id', $filters['status_id']))
             ->when(isset($filters['search']), fn ($q) => $q->where(function ($q) use ($filters) {
@@ -50,10 +58,21 @@ class AssetService
         return $asset->fresh(['category', 'status']);
     }
 
+    public function delete(Asset $asset): void
+    {
+        $asset->delete();
+    }
+
+    /**
+     * Weist ein Asset einem Benutzer zu. Das Asset wird für die Dauer der
+     * Transaktion gesperrt (lockForUpdate), damit zwei parallele Zuweisungen
+     * nicht beide als "aktiv" enden können.
+     */
     public function assign(Asset $asset, User $user): AssetAssignment
     {
         return DB::transaction(function () use ($asset, $user) {
-            // Bestehende aktive Zuweisung zurückgeben
+            Asset::whereKey($asset->id)->lockForUpdate()->first();
+
             AssetAssignment::where('asset_id', $asset->id)
                 ->whereNull('returned_at')
                 ->update(['returned_at' => now()]);
@@ -68,9 +87,13 @@ class AssetService
 
     public function unassign(Asset $asset): void
     {
-        AssetAssignment::where('asset_id', $asset->id)
-            ->whereNull('returned_at')
-            ->update(['returned_at' => now()]);
+        DB::transaction(function () use ($asset) {
+            Asset::whereKey($asset->id)->lockForUpdate()->first();
+
+            AssetAssignment::where('asset_id', $asset->id)
+                ->whereNull('returned_at')
+                ->update(['returned_at' => now()]);
+        });
     }
 
     /**
