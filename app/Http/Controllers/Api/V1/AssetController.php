@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAssetRequest;
+use App\Http\Requests\Api\UpdateAssetRequest;
 use App\Http\Resources\Api\AssetResource;
 use App\Models\Asset;
 use App\Models\User;
@@ -49,7 +50,7 @@ class AssetController extends Controller
         return new AssetResource($asset);
     }
 
-    public function update(StoreAssetRequest $request, int $id): AssetResource
+    public function update(UpdateAssetRequest $request, int $id): AssetResource
     {
         $asset = $this->assetService->findOrFail($id);
         $this->authorize('update', $asset);

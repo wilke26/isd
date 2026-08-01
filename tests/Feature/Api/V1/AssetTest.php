@@ -189,6 +189,45 @@ class AssetTest extends TestCase
         ]);
     }
 
+    public function test_asset_update_allows_partial_data(): void
+    {
+        $this->actingAsAdmin();
+        $asset = Asset::factory()->create(['name' => 'Alter Name']);
+
+        // Nur "name" mitschicken — kein asset_tag, keine Kategorie/Status nötig,
+        // im Gegensatz zu StoreAssetRequest.
+        $this->patchJson("/api/v1/assets/{$asset->id}", [
+            'name' => 'Neuer Name',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'name' => 'Neuer Name']);
+    }
+
+    public function test_asset_update_ignores_own_tag_in_unique_check(): void
+    {
+        $this->actingAsAdmin();
+        $asset = Asset::factory()->create(['asset_tag' => 'NB-777']);
+
+        // Das eigene, unveränderte Asset-Tag erneut mitzuschicken darf NICHT als
+        // Duplikat abgelehnt werden.
+        $this->patchJson("/api/v1/assets/{$asset->id}", [
+            'asset_tag' => 'NB-777',
+            'name'      => 'Aktualisiert',
+        ])->assertOk();
+    }
+
+    public function test_asset_cannot_be_its_own_parent(): void
+    {
+        $this->actingAsAdmin();
+        $asset = Asset::factory()->create();
+
+        $this->patchJson("/api/v1/assets/{$asset->id}", [
+            'parent_asset_id' => $asset->id,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['parent_asset_id']);
+    }
+
     public function test_can_retrieve_asset_assignment_history(): void
     {
         $this->actingAsAdmin();
