@@ -181,6 +181,19 @@ class TicketTest extends TestCase
         ]);
     }
 
+    public function test_closing_ticket_preserves_resolved_at(): void
+    {
+        $this->actingAsAgent();
+        $ticket = Ticket::factory()->resolved()->create();
+
+        $this->patchJson("/api/v1/tickets/{$ticket->id}", ['status' => 'closed'])
+            ->assertOk();
+
+        $ticket->refresh();
+        $this->assertNotNull($ticket->resolved_at);
+        $this->assertNotNull($ticket->closed_at);
+    }
+
     public function test_update_rejects_invalid_status(): void
     {
         $this->actingAsAgent();

@@ -92,11 +92,24 @@ class TicketService
                 }
             }
 
-            // Resolved-Zeitstempel automatisch setzen/löschen
+            // Resolved-/Closed-Zeitstempel automatisch pflegen.
             if (isset($data['status'])) {
                 $status = TicketStatus::from($data['status']);
-                $data['resolved_at'] = $status === TicketStatus::Resolved ? now() : null;
-                $data['closed_at']   = $status === TicketStatus::Closed   ? now() : null;
+
+                if ($status === TicketStatus::Resolved) {
+                    $data['resolved_at'] = now();
+                } elseif ($status !== TicketStatus::Closed) {
+                    // Jeder Übergang weg von "resolved" außer nach "closed"
+                    // bedeutet, dass das Ticket nicht mehr als gelöst gilt
+                    // (z.B. Wiedereröffnung über resolved → in_progress) —
+                    // resolved_at wird zurückgesetzt.
+                    $data['resolved_at'] = null;
+                }
+                // Bei status === Closed bleibt resolved_at unangetastet: Der
+                // ursprüngliche Lösungszeitpunkt geht beim Schließen nicht
+                // verloren.
+
+                $data['closed_at'] = $status === TicketStatus::Closed ? now() : null;
             }
 
             $ticket->update($data);

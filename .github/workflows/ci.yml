@@ -180,6 +180,23 @@ jobs:
       - name: Run Laravel Pint (Codestyle, nur prüfen)
         run: vendor/bin/pint --test
 
+      # PHPStan/Larastan liest über @mixin-Tags aus _ide_helper_models.php die
+      # echten, aus casts()/Relationen abgeleiteten Property-Typen (siehe
+      # phpstan.neon: scanFiles). Diese Datei ist bewusst gitignored und muss
+      # daher in CI frisch generiert werden — dafür braucht es eine echte,
+      # migrierte Datenbank zum Introspizieren. Eine einfache SQLite-Datei
+      # reicht dafür aus, es werden keine Testdaten benötigt.
+      - name: Prepare minimal environment for Ide-Helper
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+
+      - name: Run migrations (nur zur Introspektion für Ide-Helper)
+        run: php artisan migrate --force
+
+      - name: Generate Ide-Helper model docblocks
+        run: php artisan ide-helper:models --write-mixin --no-interaction
+
       - name: Run PHPStan / Larastan
         run: vendor/bin/phpstan analyse --memory-limit=512M
-        continue-on-error: true # auf false setzen, sobald das Projekt PHPStan-clean ist

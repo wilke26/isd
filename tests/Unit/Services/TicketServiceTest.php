@@ -92,6 +92,19 @@ class TicketServiceTest extends TestCase
         $this->assertNull($updated->resolved_at);
     }
 
+    public function test_closing_resolved_ticket_preserves_resolved_at(): void
+    {
+        $user       = User::factory()->create();
+        $ticket     = Ticket::factory()->resolved()->create();
+        $resolvedAt = $ticket->resolved_at;
+
+        $updated = $this->service->update($ticket, $user, ['status' => 'closed']);
+
+        $this->assertNotNull($updated->resolved_at);
+        $this->assertEquals($resolvedAt->timestamp, $updated->resolved_at->timestamp);
+        $this->assertNotNull($updated->closed_at);
+    }
+
     public function test_add_comment_creates_comment_record(): void
     {
         $user   = User::factory()->create();
