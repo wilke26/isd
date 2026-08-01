@@ -191,6 +191,55 @@ class TicketTest extends TestCase
             ->assertJsonValidationErrors(['status']);
     }
 
+    public function test_update_rejects_illegal_status_transition(): void
+    {
+        $this->actingAsAgent();
+        $ticket = Ticket::factory()->open()->create();
+
+        // 'closed' ist ein gültiger Enum-Wert, aber open → closed ist laut
+        // Übergangsmatrix nicht erlaubt — muss als 409 Conflict abgelehnt werden.
+        $this->patchJson("/api/v1/tickets/{$ticket->id}", ['status' => 'closed'])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'open']);
+    }
+
+    public function test_admin_is_also_bound_by_transition_matrix(): void
+    {
+        // Bewusst keine Sonderrolle für Admins — sonst existieren zwei
+        // Geschäftsregeln parallel.
+        $this->actingAsAdmin();
+        $ticket = Ticket::factory()->create(['status' => TicketStatus::Closed]);
+
+        $this->patchJson("/api/v1/tickets/{$ticket->id}", ['status' => 'open'])
+            ->assertStatus(409);
+    }
+
+    public function test_waiting_for_requester_can_be_set_by_agent(): void
+    {
+        $this->actingAsAgent();
+        $ticket = Ticket::factory()->inProgress()->create();
+
+        $this->patchJson("/api/v1/tickets/{$ticket->id}", ['status' => 'waiting_for_requester'])
+            ->assertOk();
+    }
+
+    public function test_requester_reply_automatically_reopens_waiting_ticket(): void
+    {
+        $requester = $this->actingAsUser();
+        $ticket    = Ticket::factory()->create([
+            'requester_id' => $requester->id,
+            'status'       => TicketStatus::WaitingForRequester,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/comments", [
+            'body'        => 'Hier ist die angeforderte Information.',
+            'is_internal' => false,
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'in_progress']);
+    }
+
     // ─── Kommentare ───────────────────────────────────────────────
 
     public function test_user_can_add_public_comment_to_own_ticket(): void

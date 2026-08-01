@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Exceptions\InvalidTicketStatusTransitionException;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\User;
@@ -55,8 +56,7 @@ class TicketService
                 'status'       => TicketStatus::Open,
                 // Explizit setzen statt auf den DB-Default zu vertrauen — Eloquent
                 // liest server-seitige Defaults nicht automatisch ins frische
-                // In-Memory-Objekt zurück, das würde sonst $ticket->priority === null
-                // liefern, obwohl die Datenbank korrekt 'medium' gespeichert hat.
+                // In-Memory-Objekt zurück.
                 'priority'     => $data['priority'] ?? TicketPriority::Medium,
             ]);
 
@@ -66,8 +66,21 @@ class TicketService
         });
     }
 
+    /**
+     * @throws InvalidTicketStatusTransitionException wenn ein unzulässiger
+     *         Statusübergang versucht wird (z.B. open → closed direkt).
+     *         Gilt einheitlich für alle Rollen, auch Admins.
+     */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
+        if (isset($data['status'])) {
+            $targetStatus = TicketStatus::from($data['status']);
+
+            if (! $ticket->status->canTransitionTo($targetStatus)) {
+                throw new InvalidTicketStatusTransitionException($ticket->status->value, $targetStatus->value);
+            }
+        }
+
         return DB::transaction(function () use ($ticket, $actor, $data) {
             foreach (['status', 'priority', 'assignee_id'] as $field) {
                 $currentValue = $ticket->{$field} instanceof \BackedEnum
@@ -94,11 +107,33 @@ class TicketService
 
     public function addComment(Ticket $ticket, User $author, string $body, bool $isInternal = false): void
     {
-        $ticket->comments()->create([
-            'user_id'     => $author->id,
-            'body'        => $body,
-            'is_internal' => $isInternal,
-        ]);
+        DB::transaction(function () use ($ticket, $author, $body, $isInternal) {
+            $ticket->comments()->create([
+                'user_id'     => $author->id,
+                'body'        => $body,
+                'is_internal' => $isInternal,
+            ]);
+
+            // Automatischer Statuswechsel: Antwortet der Requester öffentlich auf
+            // ein Ticket, das auf seine Rückmeldung wartet, springt es automatisch
+            // zurück auf "in_progress" — der Agent muss wieder aktiv werden.
+            // Interne Kommentare lösen bewusst keinen Statuswechsel aus.
+            if (
+                ! $isInternal
+                && $ticket->requester_id === $author->id
+                && $ticket->status === TicketStatus::WaitingForRequester
+            ) {
+                $this->recordHistory(
+                    $ticket,
+                    $author,
+                    'status',
+                    TicketStatus::WaitingForRequester->value,
+                    TicketStatus::InProgress->value,
+                );
+
+                $ticket->update(['status' => TicketStatus::InProgress]);
+            }
+        });
     }
 
     private function recordHistory(Ticket $ticket, User $actor, string $field, ?string $old, ?string $new): void

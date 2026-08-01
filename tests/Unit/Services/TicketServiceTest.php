@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\Enums\TicketStatus;
+use App\Exceptions\InvalidTicketStatusTransitionException;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketService;
@@ -84,7 +85,9 @@ class TicketServiceTest extends TestCase
         $user   = User::factory()->create();
         $ticket = Ticket::factory()->resolved()->create();
 
-        $updated = $this->service->update($ticket, $user, ['status' => 'open']);
+        // Wiedereröffnung läuft laut Übergangsmatrix über "in_progress",
+        // nicht direkt zurück auf "open".
+        $updated = $this->service->update($ticket, $user, ['status' => 'in_progress']);
 
         $this->assertNull($updated->resolved_at);
     }
@@ -127,5 +130,72 @@ class TicketServiceTest extends TestCase
         $this->service->update($ticket, $user, ['status' => 'open']);
 
         $this->assertEquals($before, $ticket->fresh()->history()->count());
+    }
+
+    // ─── Übergangsmatrix ────────────────────────────────────────────
+
+    public function test_update_throws_exception_for_invalid_transition(): void
+    {
+        $user   = User::factory()->create();
+        $ticket = Ticket::factory()->open()->create();
+
+        $this->expectException(InvalidTicketStatusTransitionException::class);
+
+        $this->service->update($ticket, $user, ['status' => 'closed']);
+    }
+
+    public function test_invalid_transition_does_not_change_ticket_status(): void
+    {
+        $user   = User::factory()->create();
+        $ticket = Ticket::factory()->open()->create();
+
+        try {
+            $this->service->update($ticket, $user, ['status' => 'closed']);
+        } catch (InvalidTicketStatusTransitionException) {
+            // erwartet
+        }
+
+        $this->assertEquals(TicketStatus::Open, $ticket->fresh()->status);
+    }
+
+    public function test_requester_public_comment_on_waiting_ticket_reopens_it(): void
+    {
+        $requester = User::factory()->create();
+        $ticket    = Ticket::factory()->create([
+            'requester_id' => $requester->id,
+            'status'       => TicketStatus::WaitingForRequester,
+        ]);
+
+        $this->service->addComment($ticket, $requester, 'Hier die angeforderte Info.', false);
+
+        $this->assertEquals(TicketStatus::InProgress, $ticket->fresh()->status);
+        $this->assertDatabaseHas('ticket_history', [
+            'ticket_id' => $ticket->id,
+            'field'     => 'status',
+            'old_value' => 'waiting_for_requester',
+            'new_value' => 'in_progress',
+        ]);
+    }
+
+    public function test_internal_comment_does_not_trigger_status_change(): void
+    {
+        $agent  = User::factory()->create();
+        $ticket = Ticket::factory()->create(['status' => TicketStatus::WaitingForRequester]);
+
+        $this->service->addComment($ticket, $agent, 'Interne Notiz', true);
+
+        $this->assertEquals(TicketStatus::WaitingForRequester, $ticket->fresh()->status);
+    }
+
+    public function test_agent_public_comment_does_not_trigger_status_change(): void
+    {
+        // Nur der Requester selbst löst den automatischen Übergang aus —
+        // ein Agent-Kommentar auf einem fremden Ticket tut das nicht.
+        $agent  = User::factory()->create();
+        $ticket = Ticket::factory()->create(['status' => TicketStatus::WaitingForRequester]);
+
+        $this->service->addComment($ticket, $agent, 'Rückfrage beantwortet?', false);
+
+        $this->assertEquals(TicketStatus::WaitingForRequester, $ticket->fresh()->status);
     }
 }
