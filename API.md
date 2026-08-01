@@ -16,6 +16,8 @@ Accept: application/json
 Content-Type: application/json
 ```
 
+Jede Anfrage erhält zusätzlich eine **Request-ID** im Response-Header `X-Request-Id` — nützlich zur Korrelation mit den strukturierten Logs (siehe [Observability](README.md#observability)).
+
 ---
 
 ### POST /auth/login
@@ -48,12 +50,7 @@ Authentifiziert einen Benutzer und gibt einen API-Token zurück.
 
 ### POST /auth/logout
 
-Widerruft den aktuellen Token.
-
-**Response 200:**
-```json
-{ "message": "Erfolgreich abgemeldet." }
-```
+Widerruft den aktuellen Token. **Response 200:** `{ "message": "Erfolgreich abgemeldet." }`
 
 ---
 
@@ -61,74 +58,35 @@ Widerruft den aktuellen Token.
 
 Gibt das Profil des aktuell eingeloggten Benutzers zurück.
 
-**Response 200:**
-```json
-{
-  "id": 1,
-  "name": "System Administrator",
-  "email": "admin@isd.local"
-}
-```
-
 ---
 
 ## Tickets
 
+Jede Ticket-Route ist über `TicketPolicy` autorisiert: Requester sehen und bearbeiten ausschließlich eigene Tickets (Bearbeiten/Zuweisen/Statuswechsel ist Agent/Admin vorbehalten), interne Kommentare sind für Requester unsichtbar.
+
 ### GET /tickets
 
-Gibt eine paginierte Liste von Tickets zurück. Admins und Agents sehen alle Tickets; normale Benutzer nur ihre eigenen.
-
-**Query-Parameter:**
+Paginierte, gefilterte Liste.
 
 | Parameter | Typ | Beschreibung |
 |---|---|---|
-| `status` | string | `open`, `in_progress`, `resolved`, `closed` |
+| `status` | string | `open`, `in_progress`, `waiting_for_requester`, `resolved`, `closed` |
 | `priority` | string | `low`, `medium`, `high`, `critical` |
 | `assignee_id` | integer | Nur Tickets dieses Agenten |
 | `search` | string | Volltextsuche im Titel |
-| `per_page` | integer | Ergebnisse pro Seite (Standard: 15) |
-
-**Response 200:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "title": "Laptop startet nicht mehr",
-      "description": "...",
-      "status": { "value": "in_progress", "label": "In Bearbeitung", "color": "amber" },
-      "priority": { "value": "high", "label": "Hoch", "color": "amber" },
-      "requester": { "id": 4, "name": "Clara Weber", "email": "c.weber@isd.local" },
-      "assignee": { "id": 2, "name": "Anna Müller", "email": "a.mueller@isd.local" },
-      "category": { "id": 5, "name": "Laptop/PC" },
-      "asset": { "id": 1, "asset_tag": "NB-001", "name": "MacBook Pro 14\"" },
-      "due_at": "2026-07-29T08:33:08+00:00",
-      "resolved_at": null,
-      "closed_at": null,
-      "created_at": "2026-07-28T08:33:08+00:00",
-      "updated_at": "2026-07-28T08:33:08+00:00"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "last_page": 1,
-    "per_page": 15,
-    "total": 4
-  }
-}
-```
+| `per_page` | integer | Standard: 15 |
 
 ---
 
 ### POST /tickets
 
-Erstellt ein neues Ticket. Der eingeloggte Benutzer wird automatisch als `requester` gesetzt.
+Erstellt ein neues Ticket, Status wird automatisch auf `open` gesetzt.
 
 **Request:**
 ```json
 {
   "title": "VPN funktioniert nicht",
-  "description": "Detaillierte Beschreibung des Problems...",
+  "description": "Detaillierte Beschreibung...",
   "priority": "medium",
   "category_id": 9,
   "asset_id": 2,
@@ -136,78 +94,57 @@ Erstellt ein neues Ticket. Der eingeloggte Benutzer wird automatisch als `reques
 }
 ```
 
-| Feld | Pflicht | Typ | Beschreibung |
-|---|---|---|---|
-| `title` | ✓ | string | max. 255 Zeichen |
-| `description` | ✓ | string | Problembeschreibung |
-| `priority` | | string | `low`, `medium` (Standard), `high`, `critical` |
-| `category_id` | | integer | ID aus `/ticket-categories` |
-| `asset_id` | | integer | Betroffenes Asset |
-| `due_at` | | datetime | ISO 8601, muss in der Zukunft liegen |
-
-**Response 201:** Ticket-Objekt (ohne `data`-Wrapper)
+**Response 201:** Ticket-Objekt (ohne `data`-Wrapper).
 
 ---
 
 ### GET /tickets/{id}
 
-Gibt ein einzelnes Ticket mit allen Relationen zurück.
+Ticket mit allen Relationen (`data`-Wrapper). Interne Kommentare werden nur ausgeliefert, wenn der anfragende Benutzer Admin oder Agent ist.
 
-**Response 200:**
-```json
-{
-  "data": {
-    "id": 1,
-    "title": "...",
-    "comments": [...],
-    "attachments": [...],
-    "history": [
-      {
-        "id": 1,
-        "field": "status",
-        "old_value": "open",
-        "new_value": "in_progress",
-        "user": { "id": 2, "name": "Anna Müller", "email": "a.mueller@isd.local" },
-        "created_at": "2026-07-28T09:00:00+00:00"
-      }
-    ]
-  }
-}
-```
-
-**Fehler 404** wenn Ticket nicht gefunden.
+**Fehler 403** wenn ein Requester ein fremdes Ticket abruft. **Fehler 404** wenn nicht gefunden.
 
 ---
 
 ### PATCH /tickets/{id}
 
-Aktualisiert ein Ticket. Alle Felder sind optional.
+Aktualisiert ein Ticket (Admin/Agent). Alle Felder optional.
 
-**Request:**
+**Statusübergänge folgen einer verbindlichen Matrix:**
+
+| Von \ Nach | `open` | `in_progress` | `waiting_for_requester` | `resolved` | `closed` |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `open` | – | ✓ | ✗ | ✓ | ✗ |
+| `in_progress` | ✗ | – | ✓ | ✓ | ✗ |
+| `waiting_for_requester` | ✗ | ✓ | – | ✓ | ✗ |
+| `resolved` | ✗ | ✓ | ✗ | – | ✓ |
+| `closed` | ✗ | ✗ | ✗ | ✗ | – |
+
+Gilt einheitlich für alle Rollen, auch Admins. Ein unzulässiger Übergang (z. B. `open → closed` direkt) liefert **HTTP 409 Conflict**:
+
 ```json
 {
-  "status": "in_progress",
-  "assignee_id": 2,
-  "priority": "high"
+  "message": "Ungültiger Statusübergang von 'open' zu 'closed'.",
+  "from": "open",
+  "to": "closed"
 }
 ```
 
-Statusübergänge lösen automatisch Zeitstempel aus:
-- `resolved` → `resolved_at` wird gesetzt
-- `closed` → `closed_at` wird gesetzt
-- Rücksetzen auf `open` → Zeitstempel werden gelöscht
+Zeitstempel-Automatik:
+- → `resolved`: `resolved_at` wird gesetzt
+- `resolved` → `in_progress`: `resolved_at` wird zurückgesetzt (Wiedereröffnung)
+- `resolved` → `closed`: `resolved_at` bleibt erhalten, `closed_at` wird zusätzlich gesetzt
 
-Alle Änderungen an `status`, `priority` und `assignee_id` werden in `ticket_history` protokolliert.
+Jede Statusänderung wird in `ticket_history` protokolliert (auch automatische, siehe unten).
 
-**Response 200:** Aktualisiertes Ticket-Objekt (in `data`-Wrapper)
+**Response 200:** Aktualisiertes Ticket (`data`-Wrapper).
 
 ---
 
 ### POST /tickets/{id}/comments
 
-Fügt einen Kommentar zum Ticket hinzu.
+Fügt einen Kommentar hinzu.
 
-**Request:**
 ```json
 {
   "body": "Das Problem wurde untersucht und...",
@@ -215,42 +152,33 @@ Fügt einen Kommentar zum Ticket hinzu.
 }
 ```
 
-| Feld | Pflicht | Beschreibung |
-|---|---|---|
-| `body` | ✓ | Kommentartext |
-| `is_internal` | | `true` = nur für Agents sichtbar (Standard: `false`) |
+`is_internal: true` ist Admin/Agent vorbehalten (`TicketPolicy::commentInternally`).
 
-**Response 201:**
-```json
-{ "message": "Kommentar hinzugefügt." }
-```
+**Automatischer Statuswechsel:** Antwortet der Requester öffentlich (`is_internal: false`) auf ein Ticket im Status `waiting_for_requester`, wechselt es automatisch zu `in_progress` — der Agent muss erneut aktiv werden. Interne Kommentare lösen keinen Statuswechsel aus.
+
+**Response 201:** `{ "message": "Kommentar hinzugefügt." }`
 
 ---
 
 ## Assets
 
+Requester sehen nur die ihnen aktuell zugewiesenen Assets. Anlegen/Bearbeiten/Zuweisen ist Agent/Admin vorbehalten, Löschen ausschließlich Admin.
+
 ### GET /assets
-
-Paginierte Asset-Liste mit Filteroptionen.
-
-**Query-Parameter:**
 
 | Parameter | Beschreibung |
 |---|---|
 | `category_id` | Nur Assets dieser Kategorie |
 | `status_id` | Nur Assets mit diesem Status |
-| `search` | Suche in Name, Asset-Tag und Seriennummer |
-| `per_page` | Ergebnisse pro Seite (Standard: 15) |
-
-**Response 200:** Paginierte Liste mit `data`-Array und `meta`.
+| `search` | Suche in Name, Asset-Tag, Seriennummer |
+| `per_page` | Standard: 15 |
 
 ---
 
 ### POST /assets
 
-Legt ein neues Asset an.
+Legt ein Asset an (Admin/Agent).
 
-**Request:**
 ```json
 {
   "asset_tag": "NB-010",
@@ -265,99 +193,70 @@ Legt ein neues Asset an.
 }
 ```
 
-| Feld | Pflicht | Beschreibung |
-|---|---|---|
-| `asset_tag` | ✓ | Eindeutige Inventarnummer (max. 50 Zeichen) |
-| `name` | ✓ | Bezeichnung |
-| `asset_category_id` | ✓ | Kategorie-ID |
-| `asset_status_id` | ✓ | Status-ID |
-| `parent_asset_id` | | Übergeordnetes Asset (für Hierarchien) |
-
-**Response 201:** Asset-Objekt
-
 ---
 
 ### GET /assets/{id}
 
-Gibt ein einzelnes Asset mit Kategorie, Status, Elternelement und aktueller Zuweisung zurück.
-
-**Response 200:** Asset-Objekt in `data`-Wrapper.
+Asset mit Kategorie, Status, Elternelement und aktueller Zuweisung (`data`-Wrapper).
 
 ---
 
 ### PATCH /assets/{id}
 
-Aktualisiert ein Asset (alle Felder optional, gleiche Validierung wie POST).
+Aktualisiert ein Asset (Admin/Agent). Alle Felder optional (`sometimes`-Validierung, getrennt von `POST`). Die Unique-Prüfung für `asset_tag` ignoriert dabei das eigene Asset. `parent_asset_id` darf nicht auf das Asset selbst verweisen.
+
+---
+
+### DELETE /assets/{id}
+
+Löscht ein Asset (Soft Delete). **Nur Admin.**
+
+**Response 200:** `{ "message": "Asset NB-010 wurde gelöscht." }`
 
 ---
 
 ### POST /assets/{id}/assign
 
-Weist ein Asset einem Benutzer zu. Eine bestehende aktive Zuweisung wird automatisch beendet.
+Weist ein Asset einem Benutzer zu (Admin/Agent). Eine bestehende aktive Zuweisung wird automatisch beendet — die Operation ist gegen parallele Zuweisungsversuche gesperrt (`lockForUpdate`), es kann nie zwei gleichzeitig aktive Zuweisungen geben.
 
-**Request:**
 ```json
 { "user_id": 4 }
-```
-
-**Response 200:**
-```json
-{ "message": "Asset NB-010 wurde Clara Weber zugewiesen." }
 ```
 
 ---
 
 ### DELETE /assets/{id}/assign
 
-Hebt die aktuelle Zuweisung auf (`returned_at` wird gesetzt).
-
-**Response 200:**
-```json
-{ "message": "Zuweisung für NB-010 aufgehoben." }
-```
+Hebt die aktuelle Zuweisung auf.
 
 ---
 
 ### GET /assets/{id}/history
 
-Gibt die vollständige Zuweisungshistorie eines Assets zurück.
-
-**Response 200:**
-```json
-[
-  {
-    "user": { "id": 4, "name": "Clara Weber" },
-    "assigned_at": "2026-04-28T08:33:08+00:00",
-    "returned_at": null
-  }
-]
-```
+Vollständige Zuweisungshistorie.
 
 ---
 
 ## Wissensdatenbank
 
+Redaktioneller Workflow: **`draft → submitted → published → archived`**. Requester sehen veröffentlichte Artikel sowie ihre eigenen (unabhängig vom Status). Autoren dürfen ihren Entwurf nur bearbeiten, solange er noch `draft` ist.
+
 ### GET /kb/articles
-
-Paginierte Artikel-Liste. Normale Benutzer sehen nur veröffentlichte Artikel; Agents und Admins auch Entwürfe.
-
-**Query-Parameter:**
 
 | Parameter | Beschreibung |
 |---|---|
 | `category_id` | Nur Artikel dieser Kategorie |
-| `status` | `draft`, `published`, `archived` |
+| `status` | `draft`, `submitted`, `published`, `archived` |
 | `tag` | Nur Artikel mit diesem Tag-Slug |
 | `search` | Suche in Titel und Inhalt |
-| `per_page` | Ergebnisse pro Seite (Standard: 15) |
+| `per_page` | Standard: 15 |
 
 ---
 
 ### POST /kb/articles
 
-Erstellt einen neuen Artikel. Der eingeloggte Benutzer wird als Autor gesetzt.
+Erstellt einen Artikel. Jeder authentifizierte Benutzer darf einen **Entwurf** anlegen; nur Admin/Agent können direkt mit `status: published` erstellen. Der Slug wird automatisch generiert und bei Kollision eindeutig gemacht (`titel`, `titel-2`, …).
 
-**Request:**
 ```json
 {
   "title": "VPN einrichten unter Windows 11",
@@ -368,34 +267,64 @@ Erstellt einen neuen Artikel. Der eingeloggte Benutzer wird als Autor gesetzt.
 }
 ```
 
-Der `slug` wird automatisch aus dem `title` generiert. Bei `status: published` wird `published_at` automatisch auf den aktuellen Zeitstempel gesetzt.
-
-**Response 201:** Artikel-Objekt (ohne `data`-Wrapper)
+**Response 201:** Artikel-Objekt (ohne `data`-Wrapper).
 
 ---
 
 ### GET /kb/articles/{id}
 
-**Response 200:** Artikel mit Autor, Kategorie und Tags (in `data`-Wrapper).
+Artikel mit Autor, Kategorie und Tags (`data`-Wrapper).
 
 ---
 
 ### PATCH /kb/articles/{id}
 
-Aktualisiert einen Artikel. Bei Änderung des Titels wird der Slug neu generiert.
+Aktualisiert einen Artikel. Admin/Agent jederzeit; der Autor selbst nur solange der Artikel noch `draft` ist.
 
-**Response 200:** Aktualisierter Artikel (in `data`-Wrapper).
+---
+
+### POST /kb/articles/{id}/submit
+
+Reicht einen eigenen Entwurf zur redaktionellen Prüfung ein (`draft → submitted`). Nur der Autor, nur aus dem Entwurfsstatus heraus.
+
+**Response 200:** Aktualisierter Artikel.
+
+---
+
+### POST /kb/articles/{id}/publish
+
+Veröffentlicht einen Artikel (aus `draft` oder `submitted`). **Nur Admin/Agent.**
+
+---
+
+### POST /kb/articles/{id}/archive
+
+Archiviert einen veröffentlichten Artikel (`published → archived`). **Nur Admin/Agent.**
 
 ---
 
 ### DELETE /kb/articles/{id}
 
-Löscht einen Artikel (Soft Delete — der Eintrag bleibt in der Datenbank, ist aber nicht mehr abrufbar).
+Löscht einen Artikel (Soft Delete). Admin darf jeden Artikel löschen, Agent nur eigene, ein Requester nur den eigenen, noch unveröffentlichten Entwurf.
 
-**Response 200:**
-```json
-{ "message": "Artikel gelöscht." }
+---
+
+## Metriken
+
+### GET /metrics
+
+*(Kein `/api/v1`-Präfix, keine Authentifizierung — für Prometheus-Scraping vorgesehen.)*
+
+Liefert Kennzahlen im Prometheus-Textformat:
+
 ```
+isd_tickets_by_status{status="open"} 2
+isd_http_requests_total{method="GET",route="api/v1/tickets",status="200"} 4
+isd_http_request_duration_seconds_sum{method="GET",route="api/v1/tickets"} 0.00619
+isd_http_request_duration_seconds_count{method="GET",route="api/v1/tickets"} 5
+```
+
+Details zur Grafana/Prometheus-Anbindung siehe [INSTALLATION.md](INSTALLATION.md#observability-anbindung).
 
 ---
 
@@ -403,23 +332,11 @@ Löscht einen Artikel (Soft Delete — der Eintrag bleibt in der Datenbank, ist 
 
 ### Paginierung
 
-Listen-Endpunkte geben immer folgende Struktur zurück:
-
 ```json
 {
   "data": [...],
-  "links": {
-    "first": "https://isd.local/api/v1/tickets?page=1",
-    "last": "https://isd.local/api/v1/tickets?page=3",
-    "prev": null,
-    "next": "https://isd.local/api/v1/tickets?page=2"
-  },
-  "meta": {
-    "current_page": 1,
-    "last_page": 3,
-    "per_page": 15,
-    "total": 42
-  }
+  "links": { "first": "...", "last": "...", "prev": null, "next": "..." },
+  "meta": { "current_page": 1, "last_page": 3, "per_page": 15, "total": 42 }
 }
 ```
 
@@ -429,23 +346,12 @@ Listen-Endpunkte geben immer folgende Struktur zurück:
 |---|---|
 | 200 | Erfolg |
 | 201 | Ressource erstellt |
-| 401 | Nicht authentifiziert (kein oder ungültiger Token) |
-| 403 | Nicht autorisiert (Token gültig, aber fehlende Berechtigung) |
+| 401 | Nicht authentifiziert |
+| 403 | Nicht autorisiert (z. B. fremdes Ticket, fremder Artikel-Entwurf) |
 | 404 | Ressource nicht gefunden |
+| 409 | Konflikt — z. B. unzulässiger Ticket-Statusübergang |
 | 422 | Validierungsfehler |
 | 500 | Interner Serverfehler |
-
-### Validierungsfehler (422)
-
-```json
-{
-  "message": "The title field is required.",
-  "errors": {
-    "title": ["The title field is required."],
-    "description": ["The description field is required."]
-  }
-}
-```
 
 ---
 
@@ -457,8 +363,11 @@ Listen-Endpunkte geben immer folgende Struktur zurück:
 |---|---|---|
 | `open` | Offen | blue |
 | `in_progress` | In Bearbeitung | amber |
+| `waiting_for_requester` | Wartet auf Rückmeldung | purple |
 | `resolved` | Gelöst | green |
 | `closed` | Geschlossen | gray |
+
+Siehe [Übergangsmatrix](#patch-ticketsid) oben.
 
 ### Ticket-Priorität
 
@@ -474,5 +383,6 @@ Listen-Endpunkte geben immer folgende Struktur zurück:
 | Wert | Label |
 |---|---|
 | `draft` | Entwurf |
+| `submitted` | Zur Prüfung eingereicht |
 | `published` | Veröffentlicht |
 | `archived` | Archiviert |
