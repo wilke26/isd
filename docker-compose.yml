@@ -13,9 +13,13 @@ services:
     container_name: isd-app
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      # An 127.0.0.1 statt 0.0.0.0 gebunden — von anderen Docker-Containern
+      # (z.B. Prometheus im observability-stack) weiterhin über
+      # host.docker.internal erreichbar, aber nicht mehr von anderen Geräten
+      # im lokalen Netzwerk.
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:443:443/udp"
     volumes:
       # Bind-Mount des Projektcodes (delegated = bessere Performance auf macOS)
       - .:/app:delegated
@@ -79,7 +83,10 @@ services:
     container_name: isd-mysql
     restart: unless-stopped
     ports:
-      - "3307:3306"
+      # An 127.0.0.1 gebunden — Zugriff bleibt für PHPStorms Database-Tool-
+      # Window vom Host aus möglich, ist aber im lokalen Netzwerk nicht mehr
+      # erreichbar.
+      - "127.0.0.1:3307:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-it_service_desk}
       MYSQL_USER: ${DB_USERNAME:-isd_user}
@@ -99,20 +106,25 @@ services:
     image: redis:7-alpine
     container_name: isd-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # Kein Host-Port veröffentlicht: Redis wird ausschließlich von den ISD-
+    # Containern selbst genutzt (Cache/Queue/Sessions/Metriken), kein Host-
+    # Tool greift aktuell direkt darauf zu. Bei Bedarf (z.B. RedisInsight)
+    # hier "127.0.0.1:6379:6379" wieder ergänzen.
     volumes:
       - redis-data:/data
     networks:
       - isd-network
 
   mailpit:
-    image: axllent/mailpit:latest
+    # Auf eine geprüfte Version gepinnt statt "latest" — v1.29.7 ist laut
+    # Release-Notes explizit ein Security-Release für Go-/Node-/Docker-
+    # Abhängigkeiten (Stand: April 2026).
+    image: axllent/mailpit:v1.29.7
     container_name: isd-mailpit
     restart: unless-stopped
     ports:
-      - "8025:8025" # Web-UI
-      - "1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # Web-UI
+      - "127.0.0.1:1125:1025" # SMTP (Host-Port 1025 war durch macOS-FinderSync belegt)
     networks:
       - isd-network
 
