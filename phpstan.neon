@@ -27,8 +27,10 @@ parameters:
         - database/migrations/*
 
     ignoreErrors:
-        # Beispiel: Policies erhalten teils ein nullable $user (Guest-Zugriffe),
-        # was Larastan in einigen Laravel-Versionen falsch typisiert.
-        # - '#Parameter \#1 \$user of method .*Policy#'
+        # Larastans Redis-Facade-Stub kennt die pipeline(callable)-Signatur nicht
+        # vollständig — die zugrunde liegende Illuminate\Redis\Connections\Connection
+        # akzeptiert den Callback tatsächlich (siehe Laravel-Dokumentation zu
+        # Redis-Pipelines). Kein echter Bug, sondern ein unvollständiger Stub.
+        - '#Static method Redis::pipeline\(\) invoked with 1 parameter, 0 required#'
 
     tmpDir: /tmp/phpstan

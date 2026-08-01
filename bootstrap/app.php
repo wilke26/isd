@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\RecordRequestMetrics;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Auf jeden Request angewendet, inkl. /up und /metrics — Request-ID
+        // zuerst, damit sie in allen nachfolgenden Log-Zeilen verfügbar ist.
+        $middleware->append([
+            AssignRequestId::class,
+            RecordRequestMetrics::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

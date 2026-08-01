@@ -52,6 +52,16 @@ return [
 
     'channels' => [
 
+        'loki' => [
+            'driver'  => 'monolog',
+            'handler' => \App\Logging\LokiHandler::class,
+            'with'    => [
+                'endpoint' => env('LOKI_ENDPOINT', 'http://host.docker.internal:3100/loki/api/v1/push'),
+                'job'      => env('LOKI_JOB', 'isd'),
+            ],
+            'level'   => env('LOG_LEVEL', 'debug'),
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),
