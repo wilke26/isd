@@ -49,7 +49,17 @@ services:
     image: it-service-desk/app:dev
     container_name: isd-queue
     restart: unless-stopped
-    command: php artisan queue:work --tries=3 --backoff=5 --max-time=3600
+    # Wartet auf einen abgeschlossenen `composer install`, bevor der Worker
+    # startet — sonst crash-loopt der Container bei leerem vendor-Volume auf
+    # einem frischen Checkout, bis composer install nebenläufig fertig ist.
+    command: >
+      sh -c "
+      while [ ! -f vendor/autoload.php ]; do
+        echo 'Warte auf composer install...';
+        sleep 2;
+      done;
+      php artisan queue:work --tries=3 --backoff=5 --max-time=3600
+      "
     volumes:
       - .:/app:delegated
       - vendor-data:/app/vendor
@@ -67,8 +77,20 @@ services:
     image: it-service-desk/app:dev
     container_name: isd-scheduler
     restart: unless-stopped
-    # Laravel-Scheduler im 60s-Takt statt klassischem Cron im Container
-    entrypoint: ["sh", "-c", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+    # Laravel-Scheduler im 60s-Takt statt klassischem Cron im Container.
+    # Wartet ebenfalls auf composer install (siehe queue-Service oben).
+    entrypoint:
+      - sh
+      - -c
+      - >
+        while [ ! -f vendor/autoload.php ]; do
+          echo 'Warte auf composer install...';
+          sleep 2;
+        done;
+        while true; do
+          php artisan schedule:run --verbose --no-interaction;
+          sleep 60;
+        done
     volumes:
       - .:/app:delegated
       - vendor-data:/app/vendor
@@ -124,7 +146,10 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8025:8025" # Web-UI
-      - "127.0.0.1:1125:1025" # SMTP (Host-Port 1025 war durch macOS-FinderSync belegt)
+      # Standard-SMTP-Port 1025 kann auf macOS durch einen Systemdienst
+      # belegt sein (z.B. FinderSync einer Cloud-Speicher-App) — auf
+      # Host-Port 1125 ausgewichen.
+      - "127.0.0.1:1125:1025" # SMTP
     networks:
       - isd-network
 
