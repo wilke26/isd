@@ -42,7 +42,11 @@ class AssetService
             'status',
             'parent',
             'children',
-            'assignments.user',
+            // "currentAssignment.user" statt "assignments.user" — konsistent
+            // mit der Listen-Query oben und mit dem, was AssetResource
+            // tatsächlich verwendet (current_assignment fehlte zuvor auf
+            // dieser Route, weil hier die falsche Relation geladen wurde).
+            'currentAssignment.user',
             'licenseAssignments.license',
         ])->findOrFail($id);
     }

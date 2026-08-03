@@ -38,13 +38,10 @@ class AssetResource extends JsonResource
                 'asset_tag' => $this->parent->asset_tag,
                 'name'      => $this->parent->name,
             ] : null),
-            'current_assignment' => $this->whenLoaded('currentAssignment', function () {
-                $assignment = $this->currentAssignment->first();
-                return $assignment ? [
-                    'user'        => new UserResource($assignment->user),
-                    'assigned_at' => $assignment->assigned_at->toIso8601String(),
-                ] : null;
-            }),
+            'current_assignment' => $this->whenLoaded('currentAssignment', fn () => $this->currentAssignment ? [
+                'user'        => new UserResource($this->currentAssignment->user),
+                'assigned_at' => $this->currentAssignment->assigned_at->toIso8601String(),
+            ] : null),
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
         ];

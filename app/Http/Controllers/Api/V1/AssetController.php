@@ -97,7 +97,10 @@ class AssetController extends Controller
     public function history(int $id): JsonResponse
     {
         $asset = $this->assetService->findOrFail($id);
-        $this->authorize('view', $asset);
+        // Eigene Ability statt 'view' — die Historie zeigt auch frühere
+        // Besitzer namentlich, das darf ein Requester nicht sehen, selbst
+        // wenn ihm das Asset gerade zugewiesen ist.
+        $this->authorize('viewHistory', $asset);
 
         $assignments = $this->assetService->assignmentHistory($asset);
 

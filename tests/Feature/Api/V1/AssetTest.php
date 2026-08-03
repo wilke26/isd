@@ -246,4 +246,36 @@ class AssetTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonStructure([['user', 'assigned_at', 'returned_at']]);
     }
+
+    public function test_requester_cannot_view_asset_history(): void
+    {
+        $user  = $this->actingAsUser();
+        $asset = Asset::factory()->create();
+
+        AssetAssignment::create([
+            'asset_id'    => $asset->id,
+            'user_id'     => $user->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->getJson("/api/v1/assets/{$asset->id}/history")
+            ->assertForbidden();
+    }
+
+    public function test_show_asset_includes_current_assignment(): void
+    {
+        $this->actingAsAdmin();
+        $asset = Asset::factory()->create();
+        $user  = User::factory()->create();
+
+        AssetAssignment::create([
+            'asset_id'    => $asset->id,
+            'user_id'     => $user->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->getJson("/api/v1/assets/{$asset->id}")
+            ->assertOk()
+            ->assertJsonPath('data.current_assignment.user.id', $user->id);
+    }
 }

@@ -14,7 +14,6 @@ class AssetPolicy
         return $user->hasRole('admin') || $user->hasRole('agent');
     }
 
-    /** Liste selbst wird im Service gefiltert (Requester sieht nur zugewiesene Assets) */
     public function viewAny(User $user): bool
     {
         return true;
@@ -26,14 +25,12 @@ class AssetPolicy
             return true;
         }
 
-        // Requester darf nur ein ihm aktuell zugewiesenes Asset einsehen
         return $asset->assignments()
             ->where('user_id', $user->id)
             ->whereNull('returned_at')
             ->exists();
     }
 
-    /** Anlegen, Bearbeiten, Zuweisen/Zurücknehmen — Admin und Agent, operatives Tagesgeschäft */
     public function create(User $user): bool
     {
         return $this->isStaff($user);
@@ -49,13 +46,23 @@ class AssetPolicy
         return $this->isStaff($user);
     }
 
-    /** Löschen ist ausschließlich dem Admin vorbehalten (destruktiver Vorgang) */
     public function delete(User $user, Asset $asset): bool
     {
         return $user->hasRole('admin');
     }
 
-    /** Kategorien und Statuswerte sind Stammdaten — ausschließlich Admin */
+    /**
+     * Die Zuweisungshistorie zeigt auch frühere Besitzer namentlich — das ist
+     * strenger als der reine "view"-Check auf das aktuell zugewiesene Asset.
+     * Ein Requester, dem das Asset gerade zugewiesen ist, darf es zwar
+     * ansehen, aber nicht erfahren, wer es vorher hatte. Eigene Ability
+     * statt Wiederverwendung von 'view'.
+     */
+    public function viewHistory(User $user, Asset $asset): bool
+    {
+        return $this->isStaff($user);
+    }
+
     public function manageCategories(User $user): bool
     {
         return $user->hasRole('admin');
