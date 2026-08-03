@@ -19,14 +19,14 @@ class UpdateTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'       => ['sometimes', 'string', 'max:255'],
+            'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
-            'status'      => ['sometimes', new Enum(TicketStatus::class)],
-            'priority'    => ['sometimes', new Enum(TicketPriority::class)],
+            'status' => ['sometimes', new Enum(TicketStatus::class)],
+            'priority' => ['sometimes', new Enum(TicketPriority::class)],
             'assignee_id' => ['sometimes', 'nullable', 'exists:users,id'],
             'category_id' => ['sometimes', 'nullable', 'exists:ticket_categories,id'],
-            'asset_id'    => ['sometimes', 'nullable', 'exists:assets,id'],
-            'due_at'      => ['sometimes', 'nullable', 'date'],
+            'asset_id' => ['sometimes', 'nullable', 'exists:assets,id'],
+            'due_at' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

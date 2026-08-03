@@ -65,15 +65,15 @@ class AssetTest extends TestCase
     {
         $this->actingAsAdmin();
         $category = AssetCategory::factory()->create();
-        $status   = AssetStatus::factory()->available()->create();
+        $status = AssetStatus::factory()->available()->create();
 
         $response = $this->postJson('/api/v1/assets', [
-            'asset_tag'         => 'NB-999',
-            'name'              => 'Test Laptop',
+            'asset_tag' => 'NB-999',
+            'name' => 'Test Laptop',
             'asset_category_id' => $category->id,
-            'asset_status_id'   => $status->id,
-            'manufacturer'      => 'Dell',
-            'model'             => 'XPS 15',
+            'asset_status_id' => $status->id,
+            'manufacturer' => 'Dell',
+            'model' => 'XPS 15',
         ]);
 
         $response->assertCreated()
@@ -86,15 +86,15 @@ class AssetTest extends TestCase
     public function test_asset_tag_must_be_unique(): void
     {
         $this->actingAsAdmin();
-        $asset    = Asset::factory()->create(['asset_tag' => 'NB-001']);
+        $asset = Asset::factory()->create(['asset_tag' => 'NB-001']);
         $category = AssetCategory::factory()->create();
-        $status   = AssetStatus::factory()->create();
+        $status = AssetStatus::factory()->create();
 
         $this->postJson('/api/v1/assets', [
-            'asset_tag'         => 'NB-001',
-            'name'              => 'Anderer Laptop',
+            'asset_tag' => 'NB-001',
+            'name' => 'Anderer Laptop',
             'asset_category_id' => $category->id,
-            'asset_status_id'   => $status->id,
+            'asset_status_id' => $status->id,
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['asset_tag']);
@@ -127,15 +127,15 @@ class AssetTest extends TestCase
     {
         $this->actingAsAdmin();
         $asset = Asset::factory()->create();
-        $user  = User::factory()->create();
+        $user = User::factory()->create();
 
         $this->postJson("/api/v1/assets/{$asset->id}/assign", [
             'user_id' => $user->id,
         ])->assertOk();
 
         $this->assertDatabaseHas('asset_assignments', [
-            'asset_id'    => $asset->id,
-            'user_id'     => $user->id,
+            'asset_id' => $asset->id,
+            'user_id' => $user->id,
             'returned_at' => null,
         ]);
     }
@@ -143,7 +143,7 @@ class AssetTest extends TestCase
     public function test_assigning_to_new_user_closes_previous_assignment(): void
     {
         $this->actingAsAdmin();
-        $asset   = Asset::factory()->create();
+        $asset = Asset::factory()->create();
         $userOne = User::factory()->create();
         $userTwo = User::factory()->create();
 
@@ -155,15 +155,15 @@ class AssetTest extends TestCase
 
         // Alte Zuweisung muss returned_at haben
         $this->assertDatabaseMissing('asset_assignments', [
-            'asset_id'    => $asset->id,
-            'user_id'     => $userOne->id,
+            'asset_id' => $asset->id,
+            'user_id' => $userOne->id,
             'returned_at' => null,
         ]);
 
         // Neue Zuweisung ist aktiv
         $this->assertDatabaseHas('asset_assignments', [
-            'asset_id'    => $asset->id,
-            'user_id'     => $userTwo->id,
+            'asset_id' => $asset->id,
+            'user_id' => $userTwo->id,
             'returned_at' => null,
         ]);
     }
@@ -172,11 +172,11 @@ class AssetTest extends TestCase
     {
         $this->actingAsAdmin();
         $asset = Asset::factory()->create();
-        $user  = User::factory()->create();
+        $user = User::factory()->create();
 
         AssetAssignment::create([
-            'asset_id'    => $asset->id,
-            'user_id'     => $user->id,
+            'asset_id' => $asset->id,
+            'user_id' => $user->id,
             'assigned_at' => now(),
         ]);
 
@@ -184,7 +184,7 @@ class AssetTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('asset_assignments', [
-            'asset_id'    => $asset->id,
+            'asset_id' => $asset->id,
             'returned_at' => null,
         ]);
     }
@@ -212,7 +212,7 @@ class AssetTest extends TestCase
         // Duplikat abgelehnt werden.
         $this->patchJson("/api/v1/assets/{$asset->id}", [
             'asset_tag' => 'NB-777',
-            'name'      => 'Aktualisiert',
+            'name' => 'Aktualisiert',
         ])->assertOk();
     }
 
@@ -232,11 +232,11 @@ class AssetTest extends TestCase
     {
         $this->actingAsAdmin();
         $asset = Asset::factory()->create();
-        $user  = User::factory()->create();
+        $user = User::factory()->create();
 
         AssetAssignment::create([
-            'asset_id'    => $asset->id,
-            'user_id'     => $user->id,
+            'asset_id' => $asset->id,
+            'user_id' => $user->id,
             'assigned_at' => now()->subMonth(),
             'returned_at' => now()->subWeek(),
         ]);
@@ -249,12 +249,12 @@ class AssetTest extends TestCase
 
     public function test_requester_cannot_view_asset_history(): void
     {
-        $user  = $this->actingAsUser();
+        $user = $this->actingAsUser();
         $asset = Asset::factory()->create();
 
         AssetAssignment::create([
-            'asset_id'    => $asset->id,
-            'user_id'     => $user->id,
+            'asset_id' => $asset->id,
+            'user_id' => $user->id,
             'assigned_at' => now(),
         ]);
 
@@ -266,11 +266,11 @@ class AssetTest extends TestCase
     {
         $this->actingAsAdmin();
         $asset = Asset::factory()->create();
-        $user  = User::factory()->create();
+        $user = User::factory()->create();
 
         AssetAssignment::create([
-            'asset_id'    => $asset->id,
-            'user_id'     => $user->id,
+            'asset_id' => $asset->id,
+            'user_id' => $user->id,
             'assigned_at' => now(),
         ]);
 

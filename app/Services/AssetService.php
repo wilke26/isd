@@ -28,8 +28,8 @@ class AssetService
             ->when(isset($filters['status_id']), fn ($q) => $q->where('asset_status_id', $filters['status_id']))
             ->when(isset($filters['search']), fn ($q) => $q->where(function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('asset_tag', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('serial_number', 'like', '%' . $filters['search'] . '%');
+                    ->orWhere('asset_tag', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('serial_number', 'like', '%' . $filters['search'] . '%');
             }))
             ->latest()
             ->paginate($filters['per_page'] ?? 15);
@@ -59,6 +59,7 @@ class AssetService
     public function update(Asset $asset, array $data): Asset
     {
         $asset->update($data);
+
         return $asset->fresh(['category', 'status']);
     }
 
@@ -82,8 +83,8 @@ class AssetService
                 ->update(['returned_at' => now()]);
 
             return AssetAssignment::create([
-                'asset_id'    => $asset->id,
-                'user_id'     => $user->id,
+                'asset_id' => $asset->id,
+                'user_id' => $user->id,
                 'assigned_at' => now(),
             ]);
         });

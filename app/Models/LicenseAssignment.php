@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LicenseAssignment extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'license_id',
         'user_id',

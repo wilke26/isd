@@ -20,7 +20,7 @@ class UpdateAssetRequest extends FormRequest
         $assetId = $this->route('id');
 
         return [
-            'asset_tag'         => [
+            'asset_tag' => [
                 'sometimes',
                 'string',
                 'max:50',
@@ -29,10 +29,10 @@ class UpdateAssetRequest extends FormRequest
                 // abgelehnt.
                 Rule::unique('assets', 'asset_tag')->ignore($assetId),
             ],
-            'name'              => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
             'asset_category_id' => ['sometimes', 'exists:asset_categories,id'],
-            'asset_status_id'   => ['sometimes', 'exists:asset_statuses,id'],
-            'parent_asset_id'   => [
+            'asset_status_id' => ['sometimes', 'exists:asset_statuses,id'],
+            'parent_asset_id' => [
                 'sometimes',
                 'nullable',
                 'exists:assets,id',
@@ -42,12 +42,12 @@ class UpdateAssetRequest extends FormRequest
                     }
                 },
             ],
-            'serial_number'     => ['sometimes', 'nullable', 'string', 'max:255'],
-            'manufacturer'      => ['sometimes', 'nullable', 'string', 'max:100'],
-            'model'             => ['sometimes', 'nullable', 'string', 'max:100'],
-            'purchased_at'      => ['sometimes', 'nullable', 'date'],
-            'warranty_until'    => ['sometimes', 'nullable', 'date', 'after_or_equal:purchased_at'],
-            'notes'             => ['sometimes', 'nullable', 'string'],
+            'serial_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'manufacturer' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'model' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'purchased_at' => ['sometimes', 'nullable', 'date'],
+            'warranty_until' => ['sometimes', 'nullable', 'date', 'after_or_equal:purchased_at'],
+            'notes' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }

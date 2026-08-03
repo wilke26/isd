@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\V1;
 
-use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -34,7 +33,7 @@ class TicketTest extends TestCase
 
     public function test_normal_user_sees_only_own_tickets(): void
     {
-        $user  = $this->actingAsUser();
+        $user = $this->actingAsUser();
         $other = User::factory()->create();
 
         Ticket::factory()->create(['requester_id' => $user->id]);
@@ -75,13 +74,13 @@ class TicketTest extends TestCase
 
     public function test_authenticated_user_can_create_ticket(): void
     {
-        $user     = $this->actingAsUser();
+        $user = $this->actingAsUser();
         $category = TicketCategory::factory()->create();
 
         $response = $this->postJson('/api/v1/tickets', [
-            'title'       => 'Mein Laptop startet nicht',
+            'title' => 'Mein Laptop startet nicht',
             'description' => 'Seit dem Update startet der Laptop nicht mehr.',
-            'priority'    => 'high',
+            'priority' => 'high',
             'category_id' => $category->id,
         ]);
 
@@ -91,9 +90,9 @@ class TicketTest extends TestCase
             ->assertJsonPath('requester.id', $user->id);
 
         $this->assertDatabaseHas('tickets', [
-            'title'        => 'Mein Laptop startet nicht',
+            'title' => 'Mein Laptop startet nicht',
             'requester_id' => $user->id,
-            'status'       => 'open',
+            'status' => 'open',
         ]);
     }
 
@@ -111,7 +110,7 @@ class TicketTest extends TestCase
         $this->actingAsUser();
 
         $response = $this->postJson('/api/v1/tickets', [
-            'title'       => 'Test Ticket',
+            'title' => 'Test Ticket',
             'description' => 'Beschreibung',
         ]);
 
@@ -119,7 +118,7 @@ class TicketTest extends TestCase
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $response->json('id'),
-            'field'     => 'status',
+            'field' => 'status',
             'new_value' => 'open',
         ]);
     }
@@ -134,7 +133,7 @@ class TicketTest extends TestCase
         $this->getJson("/api/v1/tickets/{$ticket->id}")
             ->assertOk()
             ->assertJsonStructure(['data' => [
-                'id', 'title', 'status', 'priority', 'requester', 'comments', 'attachments', 'history']
+                'id', 'title', 'status', 'priority', 'requester', 'comments', 'attachments', 'history'],
             ]);
     }
 
@@ -150,7 +149,7 @@ class TicketTest extends TestCase
 
     public function test_agent_can_update_ticket_status(): void
     {
-        $agent  = $this->actingAsAgent();
+        $agent = $this->actingAsAgent();
         $ticket = Ticket::factory()->open()->create();
 
         $this->patchJson("/api/v1/tickets/{$ticket->id}", [
@@ -161,7 +160,7 @@ class TicketTest extends TestCase
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'status',
+            'field' => 'status',
             'old_value' => 'open',
             'new_value' => 'in_progress',
         ]);
@@ -176,7 +175,7 @@ class TicketTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('tickets', [
-            'id'          => $ticket->id,
+            'id' => $ticket->id,
             'resolved_at' => null,
         ]);
     }
@@ -240,13 +239,13 @@ class TicketTest extends TestCase
     public function test_requester_reply_automatically_reopens_waiting_ticket(): void
     {
         $requester = $this->actingAsUser();
-        $ticket    = Ticket::factory()->create([
+        $ticket = Ticket::factory()->create([
             'requester_id' => $requester->id,
-            'status'       => TicketStatus::WaitingForRequester,
+            'status' => TicketStatus::WaitingForRequester,
         ]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/comments", [
-            'body'        => 'Hier ist die angeforderte Information.',
+            'body' => 'Hier ist die angeforderte Information.',
             'is_internal' => false,
         ])->assertCreated();
 
@@ -257,17 +256,17 @@ class TicketTest extends TestCase
 
     public function test_user_can_add_public_comment_to_own_ticket(): void
     {
-        $user   = $this->actingAsUser();
+        $user = $this->actingAsUser();
         $ticket = Ticket::factory()->create(['requester_id' => $user->id]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/comments", [
-            'body'        => 'Das Problem besteht weiterhin.',
+            'body' => 'Das Problem besteht weiterhin.',
             'is_internal' => false,
         ])->assertCreated();
 
         $this->assertDatabaseHas('ticket_comments', [
-            'ticket_id'   => $ticket->id,
-            'body'        => 'Das Problem besteht weiterhin.',
+            'ticket_id' => $ticket->id,
+            'body' => 'Das Problem besteht weiterhin.',
             'is_internal' => false,
         ]);
     }

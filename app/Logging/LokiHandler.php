@@ -30,18 +30,18 @@ class LokiHandler extends AbstractProcessingHandler
     protected function write(LogRecord $record): void
     {
         $labels = [
-            'job'   => $this->job,
+            'job' => $this->job,
             'level' => strtolower($record->level->getName()),
         ];
 
         $line = json_encode([
             'message' => $record->message,
-            'level'   => $record->level->getName(),
+            'level' => $record->level->getName(),
             ...$record->context,
         ]);
 
-        $seconds     = $record->datetime->getTimestamp();
-        $micros      = (int) $record->datetime->format('u');
+        $seconds = $record->datetime->getTimestamp();
+        $micros = (int) $record->datetime->format('u');
         $timestampNs = (string) (($seconds * 1_000_000_000) + ($micros * 1_000));
 
         try {

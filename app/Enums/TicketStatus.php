@@ -6,31 +6,31 @@ namespace App\Enums;
 
 enum TicketStatus: string
 {
-    case Open                = 'open';
-    case InProgress          = 'in_progress';
+    case Open = 'open';
+    case InProgress = 'in_progress';
     case WaitingForRequester = 'waiting_for_requester';
-    case Resolved            = 'resolved';
-    case Closed              = 'closed';
+    case Resolved = 'resolved';
+    case Closed = 'closed';
 
     public function label(): string
     {
-        return match($this) {
-            self::Open                => 'Offen',
-            self::InProgress          => 'In Bearbeitung',
+        return match ($this) {
+            self::Open => 'Offen',
+            self::InProgress => 'In Bearbeitung',
             self::WaitingForRequester => 'Wartet auf Rückmeldung',
-            self::Resolved            => 'Gelöst',
-            self::Closed              => 'Geschlossen',
+            self::Resolved => 'Gelöst',
+            self::Closed => 'Geschlossen',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::Open                => 'blue',
-            self::InProgress          => 'amber',
+        return match ($this) {
+            self::Open => 'blue',
+            self::InProgress => 'amber',
             self::WaitingForRequester => 'purple',
-            self::Resolved            => 'green',
-            self::Closed              => 'gray',
+            self::Resolved => 'green',
+            self::Closed => 'gray',
         };
     }
 
@@ -44,12 +44,12 @@ enum TicketStatus: string
      */
     public function allowedTransitions(): array
     {
-        return match($this) {
-            self::Open                => [self::InProgress, self::Resolved],
-            self::InProgress          => [self::WaitingForRequester, self::Resolved],
+        return match ($this) {
+            self::Open => [self::InProgress, self::Resolved],
+            self::InProgress => [self::WaitingForRequester, self::Resolved],
             self::WaitingForRequester => [self::InProgress, self::Resolved],
-            self::Resolved            => [self::InProgress, self::Closed],
-            self::Closed              => [],
+            self::Resolved => [self::InProgress, self::Closed],
+            self::Closed => [],
         };
     }
 

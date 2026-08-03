@@ -13,15 +13,15 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminRole  = Role::where('slug', 'admin')->first();
-        $agentRole  = Role::where('slug', 'agent')->first();
-        $userRole   = Role::where('slug', 'user')->first();
+        $adminRole = Role::where('slug', 'admin')->first();
+        $agentRole = Role::where('slug', 'agent')->first();
+        $userRole = Role::where('slug', 'user')->first();
 
         // Admin
         $admin = User::firstOrCreate(
             ['email' => 'admin@isd.local'],
             [
-                'name'     => 'System Administrator',
+                'name' => 'System Administrator',
                 'password' => Hash::make('password'),
             ],
         );

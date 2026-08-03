@@ -32,9 +32,9 @@ class License extends Model
         return [
             // Lizenzschlüssel wird verschlüsselt in der Datenbank gespeichert
             'license_key' => 'encrypted',
-            'expires_at'  => 'date',
+            'expires_at' => 'date',
             'seats_total' => 'integer',
-            'seats_used'  => 'integer',
+            'seats_used' => 'integer',
         ];
     }
 

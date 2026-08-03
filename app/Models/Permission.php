@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Permission extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'role_id',
         'name',

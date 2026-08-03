@@ -14,7 +14,7 @@ class TicketCategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'      => fake()->randomElement(['Hardware', 'Software', 'Netzwerk', 'Zugangsdaten']),
+            'name' => fake()->randomElement(['Hardware', 'Software', 'Netzwerk', 'Zugangsdaten']),
             'parent_id' => null,
         ];
     }

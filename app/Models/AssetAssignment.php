@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AssetAssignment extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'asset_id',
         'user_id',
@@ -25,8 +26,8 @@ class AssetAssignment extends Model
     protected function casts(): array
     {
         return [
-            'assigned_at'  => 'datetime',
-            'returned_at'  => 'datetime',
+            'assigned_at' => 'datetime',
+            'returned_at' => 'datetime',
         ];
     }
 

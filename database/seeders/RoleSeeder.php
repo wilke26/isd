@@ -34,7 +34,7 @@ class RoleSeeder extends Seeder
                     ['name' => 'Tickets einsehen',         'slug' => 'tickets.view'],
                     ['name' => 'Tickets bearbeiten',       'slug' => 'tickets.edit'],
                     ['name' => 'Interne Kommentare',       'slug' => 'tickets.comment.internal'],
-                    ['name' => 'Wissensdatenbank einsehen','slug' => 'kb.view'],
+                    ['name' => 'Wissensdatenbank einsehen', 'slug' => 'kb.view'],
                     ['name' => 'Artikel erstellen',        'slug' => 'kb.create'],
                 ],
             ],
@@ -46,7 +46,7 @@ class RoleSeeder extends Seeder
                     ['name' => 'Ticket erstellen',         'slug' => 'tickets.create'],
                     ['name' => 'Eigene Tickets einsehen',  'slug' => 'tickets.view.own'],
                     ['name' => 'Ticket kommentieren',      'slug' => 'tickets.comment'],
-                    ['name' => 'Wissensdatenbank einsehen','slug' => 'kb.view'],
+                    ['name' => 'Wissensdatenbank einsehen', 'slug' => 'kb.view'],
                 ],
             ],
         ];
@@ -60,7 +60,7 @@ class RoleSeeder extends Seeder
             foreach ($roleData['permissions'] as $permData) {
                 Permission::firstOrCreate(
                     ['role_id' => $role->id, 'slug' => $permData['slug']],
-                    ['name'    => $permData['name']],
+                    ['name' => $permData['name']],
                 );
             }
         }

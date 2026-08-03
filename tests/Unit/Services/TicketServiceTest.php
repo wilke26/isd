@@ -21,7 +21,7 @@ class TicketServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new TicketService();
+        $this->service = new TicketService;
     }
 
     public function test_create_sets_requester_and_open_status(): void
@@ -29,7 +29,7 @@ class TicketServiceTest extends TestCase
         $user = User::factory()->create();
 
         $ticket = $this->service->create($user, [
-            'title'       => 'Test Ticket',
+            'title' => 'Test Ticket',
             'description' => 'Beschreibung',
         ]);
 
@@ -40,15 +40,15 @@ class TicketServiceTest extends TestCase
 
     public function test_create_records_initial_history_entry(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = $this->service->create($user, [
-            'title'       => 'Test',
+            'title' => 'Test',
             'description' => 'Beschreibung',
         ]);
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'status',
+            'field' => 'status',
             'old_value' => null,
             'new_value' => 'open',
         ]);
@@ -56,14 +56,14 @@ class TicketServiceTest extends TestCase
 
     public function test_update_records_status_change_in_history(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->open()->create();
 
         $this->service->update($ticket, $user, ['status' => 'in_progress']);
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'status',
+            'field' => 'status',
             'old_value' => 'open',
             'new_value' => 'in_progress',
         ]);
@@ -71,7 +71,7 @@ class TicketServiceTest extends TestCase
 
     public function test_resolving_ticket_sets_resolved_at(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->inProgress()->create();
 
         $updated = $this->service->update($ticket, $user, ['status' => 'resolved']);
@@ -82,7 +82,7 @@ class TicketServiceTest extends TestCase
 
     public function test_reopening_resolved_ticket_clears_resolved_at(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->resolved()->create();
 
         // Wiedereröffnung läuft laut Übergangsmatrix über "in_progress",
@@ -94,8 +94,8 @@ class TicketServiceTest extends TestCase
 
     public function test_closing_resolved_ticket_preserves_resolved_at(): void
     {
-        $user       = User::factory()->create();
-        $ticket     = Ticket::factory()->resolved()->create();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->resolved()->create();
         $resolvedAt = $ticket->resolved_at;
 
         $updated = $this->service->update($ticket, $user, ['status' => 'closed']);
@@ -113,14 +113,14 @@ class TicketServiceTest extends TestCase
      */
     public function test_resending_same_status_does_not_reset_resolved_at(): void
     {
-        $user       = User::factory()->create();
-        $ticket     = Ticket::factory()->resolved()->create();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->resolved()->create();
         $originalResolvedAt = $ticket->resolved_at;
 
         $this->travel(5)->minutes();
 
         $updated = $this->service->update($ticket, $user, [
-            'status'   => 'resolved',
+            'status' => 'resolved',
             'priority' => 'high',
         ]);
 
@@ -129,35 +129,35 @@ class TicketServiceTest extends TestCase
 
     public function test_add_comment_creates_comment_record(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
 
         $this->service->addComment($ticket, $user, 'Kommentartext', false);
 
         $this->assertDatabaseHas('ticket_comments', [
-            'ticket_id'   => $ticket->id,
-            'user_id'     => $user->id,
-            'body'        => 'Kommentartext',
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'Kommentartext',
             'is_internal' => false,
         ]);
     }
 
     public function test_internal_comment_is_stored_correctly(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
 
         $this->service->addComment($ticket, $user, 'Interne Notiz', true);
 
         $this->assertDatabaseHas('ticket_comments', [
-            'ticket_id'   => $ticket->id,
+            'ticket_id' => $ticket->id,
             'is_internal' => true,
         ]);
     }
 
     public function test_status_change_is_not_recorded_when_unchanged(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->open()->create();
 
         $before = $ticket->history()->count();
@@ -174,15 +174,15 @@ class TicketServiceTest extends TestCase
      */
     public function test_unassigning_ticket_records_history(): void
     {
-        $user     = User::factory()->create();
+        $user = User::factory()->create();
         $assignee = User::factory()->create();
-        $ticket   = Ticket::factory()->create(['assignee_id' => $assignee->id]);
+        $ticket = Ticket::factory()->create(['assignee_id' => $assignee->id]);
 
         $this->service->update($ticket, $user, ['assignee_id' => null]);
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'assignee_id',
+            'field' => 'assignee_id',
             'old_value' => (string) $assignee->id,
             'new_value' => null,
         ]);
@@ -192,15 +192,15 @@ class TicketServiceTest extends TestCase
 
     public function test_reassigning_from_null_records_history(): void
     {
-        $user     = User::factory()->create();
+        $user = User::factory()->create();
         $assignee = User::factory()->create();
-        $ticket   = Ticket::factory()->create(['assignee_id' => null]);
+        $ticket = Ticket::factory()->create(['assignee_id' => null]);
 
         $this->service->update($ticket, $user, ['assignee_id' => $assignee->id]);
 
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'assignee_id',
+            'field' => 'assignee_id',
             'old_value' => null,
             'new_value' => (string) $assignee->id,
         ]);
@@ -208,7 +208,7 @@ class TicketServiceTest extends TestCase
 
     public function test_resending_same_null_assignee_does_not_record_history(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['assignee_id' => null]);
 
         $before = $ticket->history()->count();
@@ -222,7 +222,7 @@ class TicketServiceTest extends TestCase
 
     public function test_update_throws_exception_for_invalid_transition(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->open()->create();
 
         $this->expectException(InvalidTicketStatusTransitionException::class);
@@ -232,7 +232,7 @@ class TicketServiceTest extends TestCase
 
     public function test_invalid_transition_does_not_change_ticket_status(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->open()->create();
 
         try {
@@ -247,9 +247,9 @@ class TicketServiceTest extends TestCase
     public function test_requester_public_comment_on_waiting_ticket_reopens_it(): void
     {
         $requester = User::factory()->create();
-        $ticket    = Ticket::factory()->create([
+        $ticket = Ticket::factory()->create([
             'requester_id' => $requester->id,
-            'status'       => TicketStatus::WaitingForRequester,
+            'status' => TicketStatus::WaitingForRequester,
         ]);
 
         $this->service->addComment($ticket, $requester, 'Hier die angeforderte Info.', false);
@@ -257,7 +257,7 @@ class TicketServiceTest extends TestCase
         $this->assertEquals(TicketStatus::InProgress, $ticket->fresh()->status);
         $this->assertDatabaseHas('ticket_history', [
             'ticket_id' => $ticket->id,
-            'field'     => 'status',
+            'field' => 'status',
             'old_value' => 'waiting_for_requester',
             'new_value' => 'in_progress',
         ]);
@@ -265,7 +265,7 @@ class TicketServiceTest extends TestCase
 
     public function test_internal_comment_does_not_trigger_status_change(): void
     {
-        $agent  = User::factory()->create();
+        $agent = User::factory()->create();
         $ticket = Ticket::factory()->create(['status' => TicketStatus::WaitingForRequester]);
 
         $this->service->addComment($ticket, $agent, 'Interne Notiz', true);
@@ -277,7 +277,7 @@ class TicketServiceTest extends TestCase
     {
         // Nur der Requester selbst löst den automatischen Übergang aus —
         // ein Agent-Kommentar auf einem fremden Ticket tut das nicht.
-        $agent  = User::factory()->create();
+        $agent = User::factory()->create();
         $ticket = Ticket::factory()->create(['status' => TicketStatus::WaitingForRequester]);
 
         $this->service->addComment($ticket, $agent, 'Rückfrage beantwortet?', false);

@@ -25,8 +25,8 @@ class InvalidTicketStatusTransitionException extends Exception
     {
         return response()->json([
             'message' => $this->getMessage(),
-            'from'    => $this->from,
-            'to'      => $this->to,
+            'from' => $this->from,
+            'to' => $this->to,
         ], 409);
     }
 }

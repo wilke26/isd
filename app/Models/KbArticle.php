@@ -32,7 +32,7 @@ class KbArticle extends Model
     protected function casts(): array
     {
         return [
-            'status'       => ArticleStatus::class,
+            'status' => ArticleStatus::class,
             'published_at' => 'datetime',
         ];
     }

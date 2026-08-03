@@ -14,7 +14,7 @@ class AssetStatusFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'  => fake()->randomElement(['Verfügbar', 'In Verwendung', 'In Reparatur']),
+            'name' => fake()->randomElement(['Verfügbar', 'In Verwendung', 'In Reparatur']),
             'color' => fake()->hexColor(),
         ];
     }

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AssetCategory extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'parent_id',
         'name',

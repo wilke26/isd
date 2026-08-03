@@ -17,16 +17,16 @@ class AssetFactory extends Factory
     {
         return [
             'asset_category_id' => AssetCategory::factory(),
-            'asset_status_id'   => AssetStatus::factory(),
-            'parent_asset_id'   => null,
-            'asset_tag'         => strtoupper(fake()->unique()->bothify('??-###')),
-            'name'              => fake()->words(3, true),
-            'serial_number'     => fake()->unique()->bothify('SN-########'),
-            'manufacturer'      => fake()->randomElement(['Apple', 'Lenovo', 'Dell', 'HP', 'Cisco']),
-            'model'             => fake()->bothify('Model-??-###'),
-            'purchased_at'      => fake()->dateTimeBetween('-3 years', '-6 months'),
-            'warranty_until'    => fake()->dateTimeBetween('now', '+3 years'),
-            'notes'             => null,
+            'asset_status_id' => AssetStatus::factory(),
+            'parent_asset_id' => null,
+            'asset_tag' => strtoupper(fake()->unique()->bothify('??-###')),
+            'name' => fake()->words(3, true),
+            'serial_number' => fake()->unique()->bothify('SN-########'),
+            'manufacturer' => fake()->randomElement(['Apple', 'Lenovo', 'Dell', 'HP', 'Cisco']),
+            'model' => fake()->bothify('Model-??-###'),
+            'purchased_at' => fake()->dateTimeBetween('-3 years', '-6 months'),
+            'warranty_until' => fake()->dateTimeBetween('now', '+3 years'),
+            'notes' => null,
         ];
     }
 }

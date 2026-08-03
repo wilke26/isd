@@ -20,12 +20,12 @@ class KbArticleFactory extends Factory
         $title = fake()->sentence(5);
 
         return [
-            'author_id'    => User::factory(),
-            'category_id'  => KbCategory::factory(),
-            'title'        => $title,
-            'slug'         => Str::slug($title),
-            'body'         => fake()->paragraphs(3, true),
-            'status'       => ArticleStatus::Draft,
+            'author_id' => User::factory(),
+            'category_id' => KbCategory::factory(),
+            'title' => $title,
+            'slug' => Str::slug($title),
+            'body' => fake()->paragraphs(3, true),
+            'status' => ArticleStatus::Draft,
             'published_at' => null,
         ];
     }
@@ -33,7 +33,7 @@ class KbArticleFactory extends Factory
     public function published(): static
     {
         return $this->state([
-            'status'       => ArticleStatus::Published,
+            'status' => ArticleStatus::Published,
             'published_at' => now()->subDays(fake()->numberBetween(1, 30)),
         ]);
     }
@@ -41,7 +41,7 @@ class KbArticleFactory extends Factory
     public function draft(): static
     {
         return $this->state([
-            'status'       => ArticleStatus::Draft,
+            'status' => ArticleStatus::Draft,
             'published_at' => null,
         ]);
     }

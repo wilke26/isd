@@ -20,7 +20,7 @@ class AuthTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'password',
         ]);
 
@@ -36,7 +36,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 

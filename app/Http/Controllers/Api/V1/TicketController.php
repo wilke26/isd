@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreTicketRequest;
 use App\Http\Requests\Api\UpdateTicketRequest;
 use App\Http\Resources\Api\TicketResource;
+use App\Models\Ticket;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class TicketController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $this->authorize('viewAny', \App\Models\Ticket::class);
+        $this->authorize('viewAny', Ticket::class);
 
         $tickets = $this->ticketService->list(
             user: $request->user(),
@@ -33,7 +34,7 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): JsonResponse
     {
-        $this->authorize('create', \App\Models\Ticket::class);
+        $this->authorize('create', Ticket::class);
 
         $ticket = $this->ticketService->create(
             requester: $request->user(),
@@ -64,11 +65,11 @@ class TicketController extends Controller
     public function addComment(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'body'        => ['required', 'string'],
+            'body' => ['required', 'string'],
             'is_internal' => ['boolean'],
         ]);
 
-        $ticket     = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findOrFail($id);
         $isInternal = $request->boolean('is_internal');
 
         $this->authorize($isInternal ? 'commentInternally' : 'commentPublicly', $ticket);

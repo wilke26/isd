@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AssetStatus extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'color',

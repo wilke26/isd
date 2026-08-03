@@ -105,7 +105,7 @@ class AssetController extends Controller
         $assignments = $this->assetService->assignmentHistory($asset);
 
         return response()->json($assignments->map(fn ($a) => [
-            'user'        => ['id' => $a->user->id, 'name' => $a->user->name],
+            'user' => ['id' => $a->user->id, 'name' => $a->user->name],
             'assigned_at' => $a->assigned_at->toIso8601String(),
             'returned_at' => $a->returned_at?->toIso8601String(),
         ]));

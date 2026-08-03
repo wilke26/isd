@@ -53,11 +53,11 @@ class TicketService
             $ticket = Ticket::create([
                 ...$data,
                 'requester_id' => $requester->id,
-                'status'       => TicketStatus::Open,
+                'status' => TicketStatus::Open,
                 // Explizit setzen statt auf den DB-Default zu vertrauen — Eloquent
                 // liest server-seitige Defaults nicht automatisch ins frische
                 // In-Memory-Objekt zurück.
-                'priority'     => $data['priority'] ?? TicketPriority::Medium,
+                'priority' => $data['priority'] ?? TicketPriority::Medium,
             ]);
 
             $this->recordHistory($ticket, $requester, 'status', null, TicketStatus::Open->value);
@@ -68,8 +68,8 @@ class TicketService
 
     /**
      * @throws InvalidTicketStatusTransitionException wenn ein unzulässiger
-     *         Statusübergang versucht wird (z.B. open → closed direkt).
-     *         Gilt einheitlich für alle Rollen, auch Admins.
+     *                                                Statusübergang versucht wird (z.B. open → closed direkt).
+     *                                                Gilt einheitlich für alle Rollen, auch Admins.
      */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
@@ -95,8 +95,8 @@ class TicketService
 
                 $currentValue = match (true) {
                     $ticket->{$field} instanceof \BackedEnum => $ticket->{$field}->value,
-                    $ticket->{$field} === null                => null,
-                    default                                   => (string) $ticket->{$field},
+                    $ticket->{$field} === null => null,
+                    default => (string) $ticket->{$field},
                 };
 
                 $newValue = $data[$field] !== null ? (string) $data[$field] : null;
@@ -136,8 +136,8 @@ class TicketService
     {
         DB::transaction(function () use ($ticket, $author, $body, $isInternal) {
             $ticket->comments()->create([
-                'user_id'     => $author->id,
-                'body'        => $body,
+                'user_id' => $author->id,
+                'body' => $body,
                 'is_internal' => $isInternal,
             ]);
 
@@ -167,8 +167,8 @@ class TicketService
     {
         TicketHistory::create([
             'ticket_id' => $ticket->id,
-            'user_id'   => $actor->id,
-            'field'     => $field,
+            'user_id' => $actor->id,
+            'field' => $field,
             'old_value' => $old,
             'new_value' => $new,
         ]);

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TicketHistory extends Model
 {
     use HasFactory;
+
     // Laravel würde "ticket_histories" ableiten — korrekter Name ist "ticket_history"
     protected $table = 'ticket_history';
 

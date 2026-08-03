@@ -71,13 +71,13 @@ class KbArticleTest extends TestCase
 
     public function test_agent_can_create_draft_article(): void
     {
-        $agent    = $this->actingAsAgent();
+        $agent = $this->actingAsAgent();
         $category = KbCategory::factory()->create();
 
         $response = $this->postJson('/api/v1/kb/articles', [
-            'title'       => 'Neuer Artikel',
-            'body'        => 'Inhalt des Artikels...',
-            'status'      => 'draft',
+            'title' => 'Neuer Artikel',
+            'body' => 'Inhalt des Artikels...',
+            'status' => 'draft',
             'category_id' => $category->id,
         ]);
 
@@ -92,15 +92,15 @@ class KbArticleTest extends TestCase
         $this->actingAsAgent();
 
         $response = $this->postJson('/api/v1/kb/articles', [
-            'title'  => 'Veröffentlichter Artikel',
-            'body'   => 'Inhalt...',
+            'title' => 'Veröffentlichter Artikel',
+            'body' => 'Inhalt...',
             'status' => 'published',
         ]);
 
         $response->assertCreated();
 
         $this->assertDatabaseMissing('kb_articles', [
-            'id'           => $response->json('id'),
+            'id' => $response->json('id'),
             'published_at' => null,
         ]);
     }
@@ -120,7 +120,7 @@ class KbArticleTest extends TestCase
 
         $this->postJson('/api/v1/kb/articles', [
             'title' => 'Mein Test Artikel',
-            'body'  => 'Inhalt...',
+            'body' => 'Inhalt...',
         ])->assertCreated();
 
         $this->assertDatabaseHas('kb_articles', [
@@ -149,7 +149,7 @@ class KbArticleTest extends TestCase
 
         $this->patchJson("/api/v1/kb/articles/{$article->id}", [
             'title' => 'Aktualisierter Titel',
-            'body'  => $article->body,
+            'body' => $article->body,
         ])
             ->assertOk()
             ->assertJsonPath('data.title', 'Aktualisierter Titel');
@@ -159,7 +159,7 @@ class KbArticleTest extends TestCase
 
     public function test_agent_can_delete_own_article(): void
     {
-        $agent   = $this->actingAsAgent();
+        $agent = $this->actingAsAgent();
         $article = KbArticle::factory()->create(['author_id' => $agent->id]);
 
         $this->deleteJson("/api/v1/kb/articles/{$article->id}")

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class KbCategory extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'parent_id',
         'name',

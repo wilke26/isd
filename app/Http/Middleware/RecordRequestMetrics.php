@@ -32,12 +32,12 @@ class RecordRequestMetrics
         }
 
         $duration = microtime(true) - $start;
-        $method   = $request->method();
+        $method = $request->method();
         // Die Routen-URI (z.B. "api/v1/tickets/{id}") statt der konkreten URL
         // verwenden, sonst würde jede Ticket-ID eine eigene Zeitreihe erzeugen.
-        $route    = $request->route()?->uri() ?? 'unmatched';
-        $status   = $response->getStatusCode();
-        $key      = "{$method}|{$route}";
+        $route = $request->route()?->uri() ?? 'unmatched';
+        $status = $response->getStatusCode();
+        $key = "{$method}|{$route}";
 
         // Metriken sind ein Nice-to-have — ein nicht erreichbares Redis darf
         // niemals den eigentlichen Request zum Scheitern bringen.
@@ -52,10 +52,10 @@ class RecordRequestMetrics
         }
 
         Log::channel('loki')->info('http_request_completed', [
-            'request_id'  => $request->attributes->get('request_id'),
-            'method'      => $method,
-            'route'       => $route,
-            'status'      => $status,
+            'request_id' => $request->attributes->get('request_id'),
+            'method' => $method,
+            'route' => $route,
+            'status' => $status,
             'duration_ms' => round($duration * 1000, 2),
         ]);
     }

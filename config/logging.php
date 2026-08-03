@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Logging\LokiHandler;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -53,13 +56,13 @@ return [
     'channels' => [
 
         'loki' => [
-            'driver'  => 'monolog',
-            'handler' => \App\Logging\LokiHandler::class,
-            'with'    => [
+            'driver' => 'monolog',
+            'handler' => LokiHandler::class,
+            'with' => [
                 'endpoint' => env('LOKI_ENDPOINT', 'http://host.docker.internal:3100/loki/api/v1/push'),
-                'job'      => env('LOKI_JOB', 'isd'),
+                'job' => env('LOKI_JOB', 'isd'),
             ],
-            'level'   => env('LOG_LEVEL', 'debug'),
+            'level' => env('LOG_LEVEL', 'debug'),
         ],
 
         'stack' => [
@@ -99,7 +102,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],

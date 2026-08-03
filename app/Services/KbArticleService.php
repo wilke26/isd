@@ -23,7 +23,7 @@ class KbArticleService
                 // (unabhängig vom Status — Entwurf, eingereicht, archiviert).
                 $q->where(function ($q2) use ($user) {
                     $q2->where('status', ArticleStatus::Published)
-                       ->orWhere('author_id', $user->id);
+                        ->orWhere('author_id', $user->id);
                 });
             })
             ->when(isset($filters['category_id']), fn ($q) => $q->where('category_id', $filters['category_id']))
@@ -31,7 +31,7 @@ class KbArticleService
             ->when(isset($filters['tag']), fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('slug', $filters['tag'])))
             ->when(isset($filters['search']), fn ($q) => $q->where(function ($q) use ($filters) {
                 $q->where('title', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('body', 'like', '%' . $filters['search'] . '%');
+                    ->orWhere('body', 'like', '%' . $filters['search'] . '%');
             }))
             ->latest('published_at')
             ->paginate($filters['per_page'] ?? 15);
@@ -57,9 +57,9 @@ class KbArticleService
 
         $article = KbArticle::create([
             ...$data,
-            'author_id'    => $author->id,
-            'slug'         => $this->uniqueSlug($data['title']),
-            'status'       => $status,
+            'author_id' => $author->id,
+            'slug' => $this->uniqueSlug($data['title']),
+            'status' => $status,
             'published_at' => $status === ArticleStatus::Published ? now() : null,
         ]);
 
@@ -117,7 +117,7 @@ class KbArticleService
         }
 
         $article->update([
-            'status'       => ArticleStatus::Published,
+            'status' => ArticleStatus::Published,
             'published_at' => now(),
         ]);
 
@@ -143,7 +143,7 @@ class KbArticleService
     {
         $base = Str::slug($title);
         $slug = $base;
-        $i    = 2;
+        $i = 2;
 
         while (
             KbArticle::where('slug', $slug)

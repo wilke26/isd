@@ -14,7 +14,7 @@ class AssetCategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'      => fake()->randomElement(['Laptops', 'Server', 'Monitore', 'Netzwerk', 'Drucker']),
+            'name' => fake()->randomElement(['Laptops', 'Server', 'Monitore', 'Netzwerk', 'Drucker']),
             'parent_id' => null,
         ];
     }

@@ -35,7 +35,7 @@ class Asset extends Model
     protected function casts(): array
     {
         return [
-            'purchased_at'   => 'date',
+            'purchased_at' => 'date',
             'warranty_until' => 'date',
         ];
     }

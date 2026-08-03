@@ -3,7 +3,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",
@@ -68,6 +71,15 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "qa:style": "pint --test",
+        "qa:analyse": "phpstan analyse --memory-limit=512M",
+        "qa:security": "composer audit --locked",
+        "qa": [
+            "@qa:style",
+            "@qa:analyse",
+            "@test",
+            "@qa:security"
         ]
     },
     "extra": {

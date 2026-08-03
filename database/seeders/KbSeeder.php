@@ -10,14 +10,13 @@ use App\Models\KbCategory;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class KbSeeder extends Seeder
 {
     public function run(): void
     {
         $admin = User::where('email', 'admin@isd.local')->first();
-        $anna  = User::where('email', 'a.mueller@isd.local')->first();
+        $anna = User::where('email', 'a.mueller@isd.local')->first();
 
         // ─── Kategorien ────────────────────────────────────────────
         $hardware = KbCategory::firstOrCreate(
@@ -41,20 +40,20 @@ class KbSeeder extends Seeder
         );
 
         // ─── Tags ──────────────────────────────────────────────────
-        $tagVpn      = Tag::firstOrCreate(['slug' => 'vpn'],      ['name' => 'VPN']);
-        $tagWindows  = Tag::firstOrCreate(['slug' => 'windows'],   ['name' => 'Windows']);
-        $tagMacos    = Tag::firstOrCreate(['slug' => 'macos'],     ['name' => 'macOS']);
-        $tagPasswort = Tag::firstOrCreate(['slug' => 'passwort'],  ['name' => 'Passwort']);
-        $tagNetzwerk = Tag::firstOrCreate(['slug' => 'netzwerk'],  ['name' => 'Netzwerk']);
+        $tagVpn = Tag::firstOrCreate(['slug' => 'vpn'], ['name' => 'VPN']);
+        $tagWindows = Tag::firstOrCreate(['slug' => 'windows'], ['name' => 'Windows']);
+        $tagMacos = Tag::firstOrCreate(['slug' => 'macos'], ['name' => 'macOS']);
+        $tagPasswort = Tag::firstOrCreate(['slug' => 'passwort'], ['name' => 'Passwort']);
+        $tagNetzwerk = Tag::firstOrCreate(['slug' => 'netzwerk'], ['name' => 'Netzwerk']);
 
         // ─── Artikel ───────────────────────────────────────────────
         $article1 = KbArticle::firstOrCreate(
             ['slug' => 'vpn-einrichten-windows'],
             [
-                'author_id'    => $anna->id,
-                'category_id'  => $network->id,
-                'title'        => 'VPN einrichten unter Windows 11',
-                'body'         => "# VPN einrichten unter Windows 11\n\n"
+                'author_id' => $anna->id,
+                'category_id' => $network->id,
+                'title' => 'VPN einrichten unter Windows 11',
+                'body' => "# VPN einrichten unter Windows 11\n\n"
                     . "## Voraussetzungen\n\n"
                     . "- Cisco AnyConnect 4.10 oder neuer\n"
                     . "- Gültige Active-Directory-Zugangsdaten\n"
@@ -69,8 +68,8 @@ class KbSeeder extends Seeder
                     . "3. Melde dich mit deinen AD-Zugangsdaten an.\n\n"
                     . "## Häufige Probleme\n\n"
                     . "**Verbindung bricht ab**: Prüfe ob der AnyConnect-Dienst läuft (`services.msc`).\n"
-                    . "**Falsches Passwort**: Stelle sicher, dass dein AD-Passwort nicht abgelaufen ist.",
-                'status'       => ArticleStatus::Published,
+                    . '**Falsches Passwort**: Stelle sicher, dass dein AD-Passwort nicht abgelaufen ist.',
+                'status' => ArticleStatus::Published,
                 'published_at' => now()->subDays(10),
             ],
         );
@@ -79,23 +78,23 @@ class KbSeeder extends Seeder
         $article2 = KbArticle::firstOrCreate(
             ['slug' => 'passwort-zuruecksetzen'],
             [
-                'author_id'    => $admin->id,
-                'category_id'  => $account->id,
-                'title'        => 'Passwort zurücksetzen — Self-Service und IT-Support',
-                'body'         => "# Passwort zurücksetzen\n\n"
+                'author_id' => $admin->id,
+                'category_id' => $account->id,
+                'title' => 'Passwort zurücksetzen — Self-Service und IT-Support',
+                'body' => "# Passwort zurücksetzen\n\n"
                     . "## Self-Service (empfohlen)\n\n"
-                    . "Über das Self-Service-Portal unter `https://accounts.example.com` kannst du dein "
+                    . 'Über das Self-Service-Portal unter `https://accounts.example.com` kannst du dein '
                     . "Passwort selbst zurücksetzen, sofern du deine Sicherheitsfragen hinterlegt hast.\n\n"
                     . "## Über den IT-Support\n\n"
-                    . "Falls der Self-Service nicht möglich ist, erstelle ein Ticket mit der Kategorie "
-                    . "**Zugangsdaten → Passwort-Reset**. Der IT-Support setzt das Passwort innerhalb "
+                    . 'Falls der Self-Service nicht möglich ist, erstelle ein Ticket mit der Kategorie '
+                    . '**Zugangsdaten → Passwort-Reset**. Der IT-Support setzt das Passwort innerhalb '
                     . "eines Werktages zurück.\n\n"
                     . "## Passwortrichtlinie\n\n"
                     . "- Mindestens 12 Zeichen\n"
                     . "- Groß- und Kleinbuchstaben\n"
                     . "- Mindestens eine Zahl und ein Sonderzeichen\n"
-                    . "- Gültigkeit: 90 Tage",
-                'status'       => ArticleStatus::Published,
+                    . '- Gültigkeit: 90 Tage',
+                'status' => ArticleStatus::Published,
                 'published_at' => now()->subDays(30),
             ],
         );
@@ -104,11 +103,11 @@ class KbSeeder extends Seeder
         $article3 = KbArticle::firstOrCreate(
             ['slug' => 'macos-smc-reset'],
             [
-                'author_id'    => $anna->id,
-                'category_id'  => $hardware->id,
-                'title'        => 'MacBook: SMC-Reset bei Startproblemen',
-                'body'         => "# SMC-Reset beim MacBook\n\n"
-                    . "Der SMC (System Management Controller) steuert Hardware-Funktionen wie "
+                'author_id' => $anna->id,
+                'category_id' => $hardware->id,
+                'title' => 'MacBook: SMC-Reset bei Startproblemen',
+                'body' => "# SMC-Reset beim MacBook\n\n"
+                    . 'Der SMC (System Management Controller) steuert Hardware-Funktionen wie '
                     . "Lüfter, Akku und Netzteil. Ein Reset kann bei Startproblemen helfen.\n\n"
                     . "## MacBook mit Apple Silicon (M1/M2/M3/M4)\n\n"
                     . "1. Fahre das MacBook vollständig herunter.\n"
@@ -119,8 +118,8 @@ class KbSeeder extends Seeder
                     . "1. Fahre das MacBook herunter.\n"
                     . "2. Halte `Shift + Ctrl + Option (links) + Ein/Aus` für 10 Sekunden gedrückt.\n"
                     . "3. Lasse alle Tasten los.\n"
-                    . "4. Schalte das MacBook normal ein.",
-                'status'       => ArticleStatus::Published,
+                    . '4. Schalte das MacBook normal ein.',
+                'status' => ArticleStatus::Published,
                 'published_at' => now()->subDays(5),
             ],
         );
@@ -130,12 +129,12 @@ class KbSeeder extends Seeder
         KbArticle::firstOrCreate(
             ['slug' => 'onboarding-neue-mitarbeiter'],
             [
-                'author_id'    => $admin->id,
-                'category_id'  => $account->id,
-                'title'        => 'Onboarding: IT-Ausstattung für neue Mitarbeiter',
-                'body'         => "# Onboarding-Checkliste (Entwurf)\n\n"
-                    . "Dieser Artikel wird noch bearbeitet.",
-                'status'       => ArticleStatus::Draft,
+                'author_id' => $admin->id,
+                'category_id' => $account->id,
+                'title' => 'Onboarding: IT-Ausstattung für neue Mitarbeiter',
+                'body' => "# Onboarding-Checkliste (Entwurf)\n\n"
+                    . 'Dieser Artikel wird noch bearbeitet.',
+                'status' => ArticleStatus::Draft,
                 'published_at' => null,
             ],
         );

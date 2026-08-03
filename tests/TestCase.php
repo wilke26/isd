@@ -6,8 +6,8 @@ namespace Tests;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Laravel\Sanctum\Sanctum;
 
 abstract class TestCase extends BaseTestCase

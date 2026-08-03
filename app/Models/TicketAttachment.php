@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TicketAttachment extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'ticket_id',
         'user_id',
@@ -43,8 +44,8 @@ class TicketAttachment extends Model
     public function humanReadableSize(): string
     {
         $units = ['B', 'KB', 'MB', 'GB'];
-        $size  = $this->size;
-        $i     = 0;
+        $size = $this->size;
+        $i = 0;
 
         while ($size >= 1024 && $i < count($units) - 1) {
             $size /= 1024;

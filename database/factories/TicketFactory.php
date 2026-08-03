@@ -19,16 +19,16 @@ class TicketFactory extends Factory
     {
         return [
             'requester_id' => User::factory(),
-            'assignee_id'  => null,
-            'asset_id'     => null,
-            'category_id'  => TicketCategory::factory(),
-            'title'        => fake()->sentence(6),
-            'description'  => fake()->paragraph(3),
-            'status'       => TicketStatus::Open,
-            'priority'     => TicketPriority::Medium,
-            'due_at'       => fake()->dateTimeBetween('now', '+2 weeks'),
-            'resolved_at'  => null,
-            'closed_at'    => null,
+            'assignee_id' => null,
+            'asset_id' => null,
+            'category_id' => TicketCategory::factory(),
+            'title' => fake()->sentence(6),
+            'description' => fake()->paragraph(3),
+            'status' => TicketStatus::Open,
+            'priority' => TicketPriority::Medium,
+            'due_at' => fake()->dateTimeBetween('now', '+2 weeks'),
+            'resolved_at' => null,
+            'closed_at' => null,
         ];
     }
 
@@ -45,7 +45,7 @@ class TicketFactory extends Factory
     public function resolved(): static
     {
         return $this->state([
-            'status'      => TicketStatus::Resolved,
+            'status' => TicketStatus::Resolved,
             'resolved_at' => now(),
         ]);
     }

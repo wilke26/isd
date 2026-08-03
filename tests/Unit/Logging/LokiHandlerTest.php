@@ -19,8 +19,8 @@ class LokiHandlerTest extends TestCase
 
         Log::channel('loki')->info('http_request_completed', [
             'request_id' => 'abc-123-fixed',
-            'method'     => 'GET',
-            'status'     => 200,
+            'method' => 'GET',
+            'status' => 200,
         ]);
 
         Http::assertSent(function ($request) {
