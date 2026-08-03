@@ -45,7 +45,7 @@ Die Dateien `isd.local.pem` und `isd.local-key.pem` landen im Projektverzeichnis
 
 ## Schritt 4 — Umgebungsvariablen anlegen
 
-**Wichtig:** ISD verwendet **zwei getrennte** Env-Dateien für zwei unterschiedliche Zwecke — das gezielt auseinanderzuhalten ist der häufigste Stolperstein bei der Ersteinrichtung:
+**Wichtig:** ISD verwendet **zwei getrennte** Env-Dateien für zwei unterschiedliche Zwecke:
 
 | Datei | Wird gelesen von | Zweck |
 |---|---|---|
@@ -62,26 +62,40 @@ echo "UID=$(id -u)" >> .env.docker
 echo "GID=$(id -g)" >> .env.docker
 ```
 
-Danach in `.env` die Container-internen Verbindungsdaten eintragen (Datenbank/Redis laufen im selben Docker-Netzwerk unter ihrem Servicenamen, nicht `localhost`):
+Laravels `.env.example` bringt Standardwerte für SQLite/lokales MySQL/lokalen Mailserver mit, teils als auskommentierte Zeilen (`# DB_HOST=127.0.0.1`). Für den Docker-Betrieb müssen `DB_HOST`/`REDIS_HOST`/`MAIL_HOST` stattdessen auf die **Servicenamen im Docker-Netzwerk** zeigen (`mysql`, `redis`, `mailpit`), nicht auf `localhost`.
+
+Da einzelne Zeilen je nach Laravel-Version bereits vorhanden (kommentiert oder nicht) oder ganz abwesend sein können, verwenden wir eine kleine Funktion, die beide Fälle robust abdeckt — kein manuelles Nachprüfen nötig:
 
 ```bash
-sed -i '' \
-  -e 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' \
-  -e 's/^DB_HOST=.*/DB_HOST=mysql/' \
-  -e 's/^DB_PORT=.*/DB_PORT=3306/' \
-  -e 's/^REDIS_HOST=.*/REDIS_HOST=redis/' \
-  -e 's/^CACHE_STORE=.*/CACHE_STORE=redis/' \
-  -e 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=redis/' \
-  -e 's/^SESSION_DRIVER=.*/SESSION_DRIVER=redis/' \
-  -e 's/^MAIL_HOST=.*/MAIL_HOST=mailpit/' \
-  -e 's/^MAIL_PORT=.*/MAIL_PORT=1025/' \
-  .env
+set_env_var() {
+  local key="$1" value="$2"
+  if grep -qE "^#?[[:space:]]*${key}=" .env; then
+    sed -i '' -E "s/^#?[[:space:]]*${key}=.*/${key}=${value}/" .env
+  else
+    echo "${key}=${value}" >> .env
+  fi
+}
 
-cat >> .env << 'EOF'
-DB_DATABASE=it_service_desk
-DB_USERNAME=isd_user
-DB_PASSWORD=secret
-EOF
+set_env_var DB_CONNECTION mysql
+set_env_var DB_HOST mysql
+set_env_var DB_PORT 3306
+set_env_var DB_DATABASE it_service_desk
+set_env_var DB_USERNAME isd_user
+set_env_var DB_PASSWORD secret
+
+set_env_var REDIS_HOST redis
+set_env_var CACHE_STORE redis
+set_env_var QUEUE_CONNECTION redis
+set_env_var SESSION_DRIVER redis
+
+set_env_var MAIL_HOST mailpit
+set_env_var MAIL_PORT 1025
+```
+
+Kurz prüfen, ob alles wie erwartet gesetzt ist:
+
+```bash
+grep -E "^(DB_|REDIS_HOST|CACHE_STORE|QUEUE_CONNECTION|SESSION_DRIVER|MAIL_HOST|MAIL_PORT)" .env
 ```
 
 Ab hier **immer** `docker compose --env-file .env.docker ...` verwenden (nicht `.env`) — der `--env-file`-Parameter betrifft ausschließlich, welche Variablen Docker Compose selbst für Platzhalter wie `${UID}` nutzt, nicht was Laravel im Container zu sehen bekommt (das liest ohnehin immer die bind-gemountete `.env`).
@@ -109,7 +123,9 @@ Erwartete Ausgabe: `isd-app`, `isd-mysql`, `isd-redis`, `isd-mailpit`, `isd-queu
 
 Alle Ports sind bewusst an `127.0.0.1` gebunden (Netzwerk-Härtung) — von anderen Geräten im lokalen Netzwerk aus nicht erreichbar, vom Host selbst (Browser, PHPStorm) aber uneingeschränkt.
 
-> **Hinweis MySQL-Port:** Falls `127.0.0.1:3306` bereits belegt ist (z. B. durch eine lokale MySQL-Installation), ändere in `docker-compose.yml` das Port-Mapping auf `"127.0.0.1:3307:3306"` (Standard in diesem Repo bereits so gesetzt).
+> **Hinweis MySQL-Port:** Falls `127.0.0.1:3307` bereits belegt ist, ändere in `docker-compose.yml` das Port-Mapping entsprechend.
+>
+> **Hinweis Mailpit-SMTP-Port:** Auf manchen Macs ist Port `1025` bereits durch einen macOS-Systemdienst (z. B. FinderSync einer Cloud-Speicher-App) belegt. Falls `up` mit `address already in use` auf Port 1025 scheitert, in `docker-compose.yml` beim `mailpit`-Service den Host-Port ändern, z. B. `"127.0.0.1:1125:1025"`.
 
 ---
 
@@ -248,7 +264,6 @@ Die beiden Compose-Projekte bleiben bewusst unabhängig und kommunizieren einsei
 **Port 443/80 bereits belegt:**
 ```bash
 sudo lsof -nP -iTCP:443 -sTCP:LISTEN
-# Prozess beenden oder docker-compose.yml Port anpassen
 ```
 
 **Segmentation Fault (FrankenPHP, selten auf Apple Silicon):**
@@ -265,7 +280,7 @@ docker compose --env-file .env.docker exec -u root app chown -R 501:20 <Pfad>
 ```
 
 **Vendor-/Volume-Verzeichnis leer oder nicht beschreibbar nach Volume-Neuanlage:**
-`vendor-data`, `node-modules-data`, `caddy-data`, `caddy-config` sind benannte Docker-Volumes. Werden sie neu angelegt (z. B. nach `docker compose down -v` oder manuellem `docker volume rm`), gehören sie zunächst `root`, der Dev-Container läuft aber als `appuser`:
+`vendor-data`, `node-modules-data`, `caddy-data`, `caddy-config` sind benannte Docker-Volumes. Werden sie neu angelegt (z. B. nach `docker compose down -v`), gehören sie zunächst `root`, der Dev-Container läuft aber als `appuser`:
 ```bash
 docker compose --env-file .env.docker exec -u root app chown -R 501:20 /app/vendor /app/node_modules /data /config
 ```

@@ -54,10 +54,9 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 - Token-basierte API-Authentifizierung (Laravel Sanctum)
 
 ### REST-API
-- Versionierte API (`/api/v1/`)
-- JSON-Antworten mit Paginierung
-- Vollständige CRUD-Operationen für alle Ressourcen, inkl. Workflow-Endpunkte (Submit/Publish/Archive, Asset-Zuweisung)
-- Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
+- Versionierte API (`/api/v1/`) für **Tickets, Assets und Wissensartikel** inklusive Workflow-Endpunkten (Submit/Publish/Archive, Asset-Zuweisung)
+- JSON-Antworten mit Paginierung, Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
+- Für Benutzer, Rollen, Berechtigungen, Lizenzen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte — Verwaltung erfolgt über Seeder/Datenbank. Eine Oberfläche gibt es bislang nur als Laravel-Standardseite plus `/metrics`; als Backend-Referenz ist das bewusst so begrenzt.
 
 ### Observability
 - `/metrics` im Prometheus-Textformat (Ticket-Zahlen je Status, HTTP-Request-Rate und -Latenz)
@@ -127,13 +126,36 @@ Das Projekt folgt dem **Service-Layer-Pattern**: Controller autorisieren über P
 git clone https://github.com/wilke26/isd.git
 cd isd
 
-# Laravel-eigene Konfiguration
+# 1) Laravel-eigene Konfiguration
 cp .env.example .env
 
-# Docker-Compose-Konfiguration (SEPARAT von .env — siehe Installationsanleitung)
+# 2) Docker-Compose-Konfiguration — SEPARAT von .env, siehe Installationsanleitung
 cp .env.docker.example .env.docker
 echo "UID=$(id -u)" >> .env.docker
 echo "GID=$(id -g)" >> .env.docker
+
+# 3) .env auf Docker-Netzwerk-Servicenamen umstellen (robust gegen kommentierte
+#    oder fehlende Zeilen in .env.example — siehe INSTALLATION.md Schritt 4)
+set_env_var() {
+  local key="$1" value="$2"
+  if grep -qE "^#?[[:space:]]*${key}=" .env; then
+    sed -i '' -E "s/^#?[[:space:]]*${key}=.*/${key}=${value}/" .env
+  else
+    echo "${key}=${value}" >> .env
+  fi
+}
+set_env_var DB_CONNECTION mysql
+set_env_var DB_HOST mysql
+set_env_var DB_PORT 3306
+set_env_var DB_DATABASE it_service_desk
+set_env_var DB_USERNAME isd_user
+set_env_var DB_PASSWORD secret
+set_env_var REDIS_HOST redis
+set_env_var CACHE_STORE redis
+set_env_var QUEUE_CONNECTION redis
+set_env_var SESSION_DRIVER redis
+set_env_var MAIL_HOST mailpit
+set_env_var MAIL_PORT 1025
 
 docker compose --env-file .env.docker build
 docker compose --env-file .env.docker up -d
