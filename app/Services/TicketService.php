@@ -82,33 +82,47 @@ class TicketService
         }
 
         return DB::transaction(function () use ($ticket, $actor, $data) {
-            foreach (['status', 'priority', 'assignee_id'] as $field) {
-                $currentValue = $ticket->{$field} instanceof \BackedEnum
-                    ? $ticket->{$field}->value
-                    : (string) $ticket->{$field};
+            $statusActuallyChanged = false;
 
-                if (isset($data[$field]) && $currentValue !== (string) $data[$field]) {
-                    $this->recordHistory($ticket, $actor, $field, $currentValue, (string) $data[$field]);
+            foreach (['status', 'priority', 'assignee_id'] as $field) {
+                // array_key_exists statt isset: assignee_id ist nullable —
+                // ein explizites "assignee_id": null (Zuweisung aufheben)
+                // würde von isset() fälschlich als "nicht mitgeschickt"
+                // behandelt und damit weder erkannt noch protokolliert.
+                if (! array_key_exists($field, $data)) {
+                    continue;
+                }
+
+                $currentValue = match (true) {
+                    $ticket->{$field} instanceof \BackedEnum => $ticket->{$field}->value,
+                    $ticket->{$field} === null                => null,
+                    default                                   => (string) $ticket->{$field},
+                };
+
+                $newValue = $data[$field] !== null ? (string) $data[$field] : null;
+
+                if ($currentValue !== $newValue) {
+                    $this->recordHistory($ticket, $actor, $field, $currentValue, $newValue);
+
+                    if ($field === 'status') {
+                        $statusActuallyChanged = true;
+                    }
                 }
             }
 
-            // Resolved-/Closed-Zeitstempel automatisch pflegen.
-            if (isset($data['status'])) {
+            // Resolved-/Closed-Zeitstempel nur pflegen, wenn sich der Status
+            // tatsächlich geändert hat. Andernfalls würde ein wiederholtes
+            // Mitschicken desselben Status (z.B. zusammen mit einer reinen
+            // Prioritäts- oder Zuweisungsänderung) den Lösungs- bzw.
+            // Schließzeitpunkt fälschlich auf "jetzt" zurücksetzen.
+            if ($statusActuallyChanged && isset($data['status'])) {
                 $status = TicketStatus::from($data['status']);
 
                 if ($status === TicketStatus::Resolved) {
                     $data['resolved_at'] = now();
                 } elseif ($status !== TicketStatus::Closed) {
-                    // Jeder Übergang weg von "resolved" außer nach "closed"
-                    // bedeutet, dass das Ticket nicht mehr als gelöst gilt
-                    // (z.B. Wiedereröffnung über resolved → in_progress) —
-                    // resolved_at wird zurückgesetzt.
                     $data['resolved_at'] = null;
                 }
-                // Bei status === Closed bleibt resolved_at unangetastet: Der
-                // ursprüngliche Lösungszeitpunkt geht beim Schließen nicht
-                // verloren.
-
                 $data['closed_at'] = $status === TicketStatus::Closed ? now() : null;
             }
 

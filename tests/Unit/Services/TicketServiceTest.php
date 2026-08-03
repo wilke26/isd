@@ -105,6 +105,28 @@ class TicketServiceTest extends TestCase
         $this->assertNotNull($updated->closed_at);
     }
 
+    /**
+     * Regression: Ein wiederholtes Mitschicken desselben Status (z.B.
+     * zusammen mit einer Prioritätsänderung) darf resolved_at NICHT erneut
+     * auf "jetzt" setzen — das würde den echten historischen Lösungs-
+     * zeitpunkt verfälschen.
+     */
+    public function test_resending_same_status_does_not_reset_resolved_at(): void
+    {
+        $user       = User::factory()->create();
+        $ticket     = Ticket::factory()->resolved()->create();
+        $originalResolvedAt = $ticket->resolved_at;
+
+        $this->travel(5)->minutes();
+
+        $updated = $this->service->update($ticket, $user, [
+            'status'   => 'resolved',
+            'priority' => 'high',
+        ]);
+
+        $this->assertEquals($originalResolvedAt->timestamp, $updated->resolved_at->timestamp);
+    }
+
     public function test_add_comment_creates_comment_record(): void
     {
         $user   = User::factory()->create();
@@ -141,6 +163,57 @@ class TicketServiceTest extends TestCase
         $before = $ticket->history()->count();
 
         $this->service->update($ticket, $user, ['status' => 'open']);
+
+        $this->assertEquals($before, $ticket->fresh()->history()->count());
+    }
+
+    /**
+     * Regression: assignee_id ist nullable — isset() behandelt einen
+     * expliziten null-Wert fälschlich als "nicht mitgeschickt". Eine
+     * Zuweisungsaufhebung muss trotzdem im Audit Trail erscheinen.
+     */
+    public function test_unassigning_ticket_records_history(): void
+    {
+        $user     = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket   = Ticket::factory()->create(['assignee_id' => $assignee->id]);
+
+        $this->service->update($ticket, $user, ['assignee_id' => null]);
+
+        $this->assertDatabaseHas('ticket_history', [
+            'ticket_id' => $ticket->id,
+            'field'     => 'assignee_id',
+            'old_value' => (string) $assignee->id,
+            'new_value' => null,
+        ]);
+
+        $this->assertNull($ticket->fresh()->assignee_id);
+    }
+
+    public function test_reassigning_from_null_records_history(): void
+    {
+        $user     = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket   = Ticket::factory()->create(['assignee_id' => null]);
+
+        $this->service->update($ticket, $user, ['assignee_id' => $assignee->id]);
+
+        $this->assertDatabaseHas('ticket_history', [
+            'ticket_id' => $ticket->id,
+            'field'     => 'assignee_id',
+            'old_value' => null,
+            'new_value' => (string) $assignee->id,
+        ]);
+    }
+
+    public function test_resending_same_null_assignee_does_not_record_history(): void
+    {
+        $user   = User::factory()->create();
+        $ticket = Ticket::factory()->create(['assignee_id' => null]);
+
+        $before = $ticket->history()->count();
+
+        $this->service->update($ticket, $user, ['assignee_id' => null]);
 
         $this->assertEquals($before, $ticket->fresh()->history()->count());
     }
