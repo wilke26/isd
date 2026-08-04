@@ -35,6 +35,17 @@ RUN install-php-extensions \
 # Composer aus offiziellem Image kopieren statt separat zu installieren
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Composer ruft intern git auf (u.a. zur Content-Hash-Prüfung des eigenen
+# Projekt-Repos während `composer install`). Git verweigert seit einem
+# Sicherheitsfix (CVE-2022-24765) das Arbeiten in einem Repository, dessen
+# Verzeichnisbesitzer nicht exakt dem ausführenden Benutzer entspricht
+# ("dubious ownership") — das tritt insbesondere in CI auf, wenn der
+# auschecende Prozess (GitHub-Actions-Runner) eine andere UID hat als der
+# appuser im Container. --system statt --global, damit die Ausnahme für
+# alle Benutzer im Container gilt (root während des Builds, appuser zur
+# Laufzeit), nicht nur für den, der sie gesetzt hat.
+RUN git config --system --add safe.directory /app
+
 # -----------------------------------------------------------------
 # Development-Stage
 # -----------------------------------------------------------------
