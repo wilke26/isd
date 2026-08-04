@@ -253,7 +253,7 @@ Tabellen-Übersicht:
 
 | Bereich | Tabellen |
 |---|---|
-| Auth | `users`, `roles`, `permissions`, `role_user`, `personal_access_tokens` |
+| Auth | `users`, `roles`, `role_user`, `personal_access_tokens` |
 | Assets | `assets`, `asset_categories`, `asset_statuses`, `asset_assignments`, `licenses`, `license_assignments` |
 | Tickets | `tickets`, `ticket_categories`, `ticket_comments`, `ticket_attachments`, `ticket_history` |
 | Wissensdatenbank | `kb_articles`, `kb_categories`, `kb_article_tag`, `tags` |

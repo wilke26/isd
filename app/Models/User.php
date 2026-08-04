@@ -51,13 +51,6 @@ class User extends Authenticatable
         return $this->roles->contains('slug', $slug);
     }
 
-    public function hasPermission(string $slug): bool
-    {
-        return $this->roles
-            ->flatMap(fn (Role $role) => $role->permissions)
-            ->contains('slug', $slug);
-    }
-
     // ─── Assets ───────────────────────────────────────────────────
 
     public function assetAssignments(): HasMany
