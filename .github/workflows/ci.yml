@@ -11,13 +11,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # Werte für den im Compose-File konfigurierten MySQL-Service
-  DB_DATABASE: it_service_desk_test
-  DB_USERNAME: isd_user
-  DB_PASSWORD: secret
-  DB_ROOT_PASSWORD: rootsecret
-
 jobs:
   # ---------------------------------------------------------------
   # Job 1: Produktions-Image bauen — fängt kaputte Dockerfile-Änderungen
@@ -52,6 +45,19 @@ jobs:
     name: PHPUnit Tests
     runs-on: ubuntu-latest
     needs: build-production-image
+    # WICHTIG: bewusst job-scoped statt workflow-weit — diese Werte sind nur
+    # für die docker-compose-Interpolation in DIESEM Job gedacht (eigener,
+    # von "it_service_desk" abweichender Testdatenbank-Name). Ein workflow-
+    # weiter env-Block würde als Prozess-Umgebungsvariable in JEDEN Job
+    # durchsickern und dort --env-file-Werte mit höherer Priorität
+    # überschreiben (siehe fresh-checkout-smoke-test-Job unten, der genau
+    # daran gescheitert ist: MYSQL_DATABASE wurde durch die hier gesetzte
+    # DB_DATABASE überschrieben, obwohl .env.docker dort etwas anderes sagt).
+    env:
+      DB_DATABASE: it_service_desk_test
+      DB_USERNAME: isd_user
+      DB_PASSWORD: secret
+      DB_ROOT_PASSWORD: rootsecret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
