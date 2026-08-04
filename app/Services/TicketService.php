@@ -73,15 +73,26 @@ class TicketService
      */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
-        if (isset($data['status'])) {
-            $targetStatus = TicketStatus::from($data['status']);
-
-            if (! $ticket->status->canTransitionTo($targetStatus)) {
-                throw new InvalidTicketStatusTransitionException($ticket->status->value, $targetStatus->value);
-            }
-        }
-
         return DB::transaction(function () use ($ticket, $actor, $data) {
+            // Sperrt die Ticket-Zeile für die Dauer der Transaktion und liest
+            // den garantiert aktuellen Stand. Ohne das könnten zwei parallele
+            // Requests denselben (potenziell veralteten) Ausgangsstatus vom
+            // übergebenen $ticket-Objekt sehen, beide einen für sich gültigen
+            // Übergang prüfen und anschließend widersprüchliche Änderungen
+            // mit falscher Historie schreiben — analog zu AssetService::assign().
+            $lockedTicket = Ticket::whereKey($ticket->id)->lockForUpdate()->firstOrFail();
+
+            if (isset($data['status'])) {
+                $targetStatus = TicketStatus::from($data['status']);
+
+                if (! $lockedTicket->status->canTransitionTo($targetStatus)) {
+                    throw new InvalidTicketStatusTransitionException(
+                        $lockedTicket->status->value,
+                        $targetStatus->value,
+                    );
+                }
+            }
+
             $statusActuallyChanged = false;
 
             foreach (['status', 'priority', 'assignee_id'] as $field) {
@@ -94,15 +105,15 @@ class TicketService
                 }
 
                 $currentValue = match (true) {
-                    $ticket->{$field} instanceof \BackedEnum => $ticket->{$field}->value,
-                    $ticket->{$field} === null => null,
-                    default => (string) $ticket->{$field},
+                    $lockedTicket->{$field} instanceof \BackedEnum => $lockedTicket->{$field}->value,
+                    $lockedTicket->{$field} === null => null,
+                    default => (string) $lockedTicket->{$field},
                 };
 
                 $newValue = $data[$field] !== null ? (string) $data[$field] : null;
 
                 if ($currentValue !== $newValue) {
-                    $this->recordHistory($ticket, $actor, $field, $currentValue, $newValue);
+                    $this->recordHistory($lockedTicket, $actor, $field, $currentValue, $newValue);
 
                     if ($field === 'status') {
                         $statusActuallyChanged = true;
@@ -126,9 +137,9 @@ class TicketService
                 $data['closed_at'] = $status === TicketStatus::Closed ? now() : null;
             }
 
-            $ticket->update($data);
+            $lockedTicket->update($data);
 
-            return $ticket->fresh(['requester', 'assignee', 'category', 'asset']);
+            return $lockedTicket->fresh(['requester', 'assignee', 'category', 'asset']);
         });
     }
 
