@@ -75,4 +75,17 @@ class AuthTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Erfolgreich abgemeldet.');
     }
+
+    public function test_login_is_rate_limited_after_repeated_attempts(): void
+    {
+        $payload = ['email' => 'admin@isd.local', 'password' => 'wrong-password'];
+
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->postJson('/api/v1/auth/login', $payload);
+            $this->assertNotEquals(429, $response->getStatusCode());
+        }
+
+        $this->postJson('/api/v1/auth/login', $payload)
+            ->assertStatus(429);
+    }
 }
