@@ -85,6 +85,11 @@ jobs:
           echo "DB_PASSWORD=${DB_PASSWORD}" >> .env.docker
           echo "DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}" >> .env.docker
 
+      - name: Ensure storage/bootstrap-cache are writable by the container's appuser
+        run: |
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+          sudo chown -R 1000:1000 storage bootstrap/cache
+
       - name: Build dev image (with dev dependencies)
         uses: docker/build-push-action@v6
         with:
@@ -258,6 +263,15 @@ jobs:
           echo "UID=1000" >> .env.docker
           echo "GID=1000" >> .env.docker
 
+      # storage/ und bootstrap/cache liegen im Bind-Mount, nicht in einem
+      # benannten Volume — sie übernehmen daher immer exakt die Rechte, die
+      # der GitHub-Actions-Checkout ihnen gibt, unabhängig vom Image. Lokal
+      # fällt das nie auf (Host-User == appuser-UID), in CI schon.
+      - name: Ensure storage/bootstrap-cache are writable by the container's appuser
+        run: |
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+          sudo chown -R 1000:1000 storage bootstrap/cache
+
       # --no-cache: verhindert, dass ein zwischengespeicherter Layer eine
       # kaputte Dockerfile-Änderung (z.B. Volume-Berechtigungen) verdeckt.
       - name: Build image from scratch (no layer cache)
@@ -271,10 +285,11 @@ jobs:
           timeout 60s bash -c \
             'until docker inspect --format="{{.State.Health.Status}}" isd-mysql | grep -q healthy; do sleep 2; done'
 
-      # Bewusst OHNE manuellen chown-Zwischenschritt — genau das soll dieser
-      # Test verifizieren: dass frische, unbelastete Volumes ohne Nacharbeit
-      # funktionieren (siehe Dockerfile: Verzeichnisse werden vor USER
-      # appuser mit passenden Rechten angelegt).
+      # Bewusst OHNE manuellen chown-Zwischenschritt für die benannten
+      # Volumes (vendor-data, caddy-data, ...) — genau das soll dieser Test
+      # verifizieren: dass sie ohne Nacharbeit funktionieren (siehe
+      # Dockerfile: Verzeichnisse werden vor USER appuser mit passenden
+      # Rechten angelegt).
       - name: Install Composer dependencies
         run: docker compose --env-file .env.docker exec -T app composer install --no-interaction
 
