@@ -85,10 +85,14 @@ jobs:
           echo "DB_PASSWORD=${DB_PASSWORD}" >> .env.docker
           echo "DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}" >> .env.docker
 
-      - name: Ensure storage/bootstrap-cache are writable by the container's appuser
-        run: |
-          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-          sudo chown -R 1000:1000 storage bootstrap/cache
+      # Alles bis hierhin (Checkout inkl. .git, .env, .env.docker) wurde vom
+      # GitHub-Actions-Runner unter dessen eigener UID erzeugt, nicht unter
+      # der UID 1000 des appuser im Container. Statt jede betroffene Datei
+      # einzeln aufzuzählen (storage/, bootstrap/cache, .env, ...), einmalig
+      # den kompletten Checkout übernehmen — deckt alles ab, was bis hierhin
+      # entstanden ist, und ist robust gegen künftig neu hinzukommende Pfade.
+      - name: Take ownership of the checkout for the container's appuser (UID 1000)
+        run: sudo chown -R 1000:1000 .
 
       - name: Build dev image (with dev dependencies)
         uses: docker/build-push-action@v6
@@ -263,14 +267,13 @@ jobs:
           echo "UID=1000" >> .env.docker
           echo "GID=1000" >> .env.docker
 
-      # storage/ und bootstrap/cache liegen im Bind-Mount, nicht in einem
-      # benannten Volume — sie übernehmen daher immer exakt die Rechte, die
-      # der GitHub-Actions-Checkout ihnen gibt, unabhängig vom Image. Lokal
-      # fällt das nie auf (Host-User == appuser-UID), in CI schon.
-      - name: Ensure storage/bootstrap-cache are writable by the container's appuser
-        run: |
-          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-          sudo chown -R 1000:1000 storage bootstrap/cache
+      # Alles bis hierhin (Checkout inkl. .git, .env, .env.docker) wurde vom
+      # GitHub-Actions-Runner unter dessen eigener UID erzeugt, nicht unter
+      # der UID 1000 des appuser im Container — egal ob es um storage/,
+      # bootstrap/cache oder .env selbst geht. Statt jede betroffene Datei
+      # einzeln nachzuziehen, einmalig den kompletten Checkout übernehmen.
+      - name: Take ownership of the checkout for the container's appuser (UID 1000)
+        run: sudo chown -R 1000:1000 .
 
       # --no-cache: verhindert, dass ein zwischengespeicherter Layer eine
       # kaputte Dockerfile-Änderung (z.B. Volume-Berechtigungen) verdeckt.
