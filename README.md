@@ -239,7 +239,7 @@ docker compose --env-file .env.docker exec app php artisan test --testsuite=Feat
 docker compose --env-file .env.docker exec app php artisan test --coverage
 ```
 
-**Aktueller Teststand:** 92 Tests, 0 Fehler — inkl. dedizierter Unit-Tests für die Ticket-Status-Übergangsmatrix, den Loki-Log-Handler und Autorisierungs-Grenzfälle (z. B. "Agent darf fremden Wissensartikel nicht löschen").
+**Aktueller Teststand:** 101 Tests, 0 Fehler — inkl. dedizierter Unit-Tests für die Ticket-Status-Übergangsmatrix, den Loki-Log-Handler und Autorisierungs-Grenzfälle (z. B. "Agent darf fremden Wissensartikel nicht löschen").
 
 Tests laufen gegen eine SQLite-In-Memory-Datenbank (`phpunit.xml`) und sind vollständig unabhängig von den Entwicklungsdaten.
 

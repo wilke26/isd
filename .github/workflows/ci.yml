@@ -150,11 +150,12 @@ jobs:
           docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml down -v
 
   # ---------------------------------------------------------------
-  # Job 3: Statische Analyse / Codestyle (separat, damit ein
-  # Style-Fehler nicht den teureren Testlauf blockiert/verzögert)
+  # Job 3: Statische Analyse, Codestyle und bekannte Sicherheitslücken
+  # in Abhängigkeiten (separat, damit ein Style-Fehler nicht den
+  # teureren Testlauf blockiert/verzögert)
   # ---------------------------------------------------------------
   static-analysis:
-    name: Static Analysis (Pint / PHPStan)
+    name: Static Analysis & Security (Pint / PHPStan / Audit)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -200,3 +201,101 @@ jobs:
 
       - name: Run PHPStan / Larastan
         run: vendor/bin/phpstan analyse --memory-limit=512M
+
+      - name: Run Composer Audit (bekannte Sicherheitslücken in Abhängigkeiten)
+        run: composer audit --locked
+
+  # ---------------------------------------------------------------
+  # Job 4: Fresh-Checkout-Smoke-Test — spielt die in README.md
+  # dokumentierten Schnellstart-Schritte wortwörtlich gegen einen
+  # frischen Checkout durch (nicht die CI-eigene Env-Logik aus Job 2!).
+  # Soll genau die Klasse von Dokumentationsfehlern automatisch fangen,
+  # die zuvor manuell entdeckt werden mussten (kommentierte .env-Zeilen,
+  # fehlende .env-Anpassung im Schnellstart, Volume-Berechtigungen).
+  # ---------------------------------------------------------------
+  fresh-checkout-smoke-test:
+    name: Fresh Checkout Smoke Test (README Quickstart)
+    runs-on: ubuntu-latest
+    needs: build-production-image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Exakt die in README.md → Schnellstart dokumentierten Schritte,
+      # nicht die bespoke Env-Logik aus dem "test"-Job oben — sonst würde
+      # eine Abweichung zwischen Doku und CI-Skript nie auffallen.
+      - name: Create .env exactly as documented in README quickstart
+        run: |
+          cp .env.example .env
+
+          set_env_var() {
+            local key="$1" value="$2"
+            if grep -qE "^#?[[:space:]]*${key}=" .env; then
+              sed -i -E "s/^#?[[:space:]]*${key}=.*/${key}=${value}/" .env
+            else
+              echo "${key}=${value}" >> .env
+            fi
+          }
+          set_env_var DB_CONNECTION mysql
+          set_env_var DB_HOST mysql
+          set_env_var DB_PORT 3306
+          set_env_var DB_DATABASE it_service_desk
+          set_env_var DB_USERNAME isd_user
+          set_env_var DB_PASSWORD secret
+          set_env_var REDIS_HOST redis
+          set_env_var CACHE_STORE redis
+          set_env_var QUEUE_CONNECTION redis
+          set_env_var SESSION_DRIVER redis
+          set_env_var MAIL_HOST mailpit
+          set_env_var MAIL_PORT 1025
+
+      - name: Create .env.docker
+        run: |
+          cp .env.docker.example .env.docker
+          echo "UID=1000" >> .env.docker
+          echo "GID=1000" >> .env.docker
+
+      # --no-cache: verhindert, dass ein zwischengespeicherter Layer eine
+      # kaputte Dockerfile-Änderung (z.B. Volume-Berechtigungen) verdeckt.
+      - name: Build image from scratch (no layer cache)
+        run: docker compose --env-file .env.docker build --no-cache
+
+      - name: Start the full stack
+        run: docker compose --env-file .env.docker up -d
+
+      - name: Wait for MySQL to be healthy
+        run: |
+          timeout 60s bash -c \
+            'until docker inspect --format="{{.State.Health.Status}}" isd-mysql | grep -q healthy; do sleep 2; done'
+
+      # Bewusst OHNE manuellen chown-Zwischenschritt — genau das soll dieser
+      # Test verifizieren: dass frische, unbelastete Volumes ohne Nacharbeit
+      # funktionieren (siehe Dockerfile: Verzeichnisse werden vor USER
+      # appuser mit passenden Rechten angelegt).
+      - name: Install Composer dependencies
+        run: docker compose --env-file .env.docker exec -T app composer install --no-interaction
+
+      - name: Generate application key
+        run: docker compose --env-file .env.docker exec -T app php artisan key:generate
+
+      - name: Run migrations and seed
+        run: docker compose --env-file .env.docker exec -T app php artisan migrate --seed --force
+
+      # Über den Klartext-HTTP-Fallback auf Port 80 (siehe Caddyfile) statt
+      # HTTPS — spart mkcert/Zertifikats-Vertrauen in der CI-Umgebung, ist
+      # aber derselbe Endpunkt, den auch Prometheus zum Scrapen nutzt.
+      - name: Verify the application actually responds
+        run: |
+          curl -fsS http://localhost/up
+          curl -fsS http://localhost/metrics | grep -q isd_tickets_by_status
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose --env-file .env.docker logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose --env-file .env.docker down -v
