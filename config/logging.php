@@ -56,6 +56,11 @@ return [
     'channels' => [
 
         'loki' => [
+            // Standardmäßig deaktiviert: ohne laufenden observability-stack würde
+            // sonst jeder Request einen bis zu zwei Sekunden dauernden HTTP-Timeout-
+            // Versuch an Loki im Hintergrund auslösen. Lokal auf true setzen, sobald
+            // der Stack läuft (siehe INSTALLATION.md → Observability-Anbindung).
+            'loki_enabled' => env('LOKI_ENABLED', false),
             'driver' => 'monolog',
             'handler' => LokiHandler::class,
             'with' => [

@@ -51,12 +51,19 @@ class RecordRequestMetrics
             // bewusst verschluckt
         }
 
-        Log::channel('loki')->info('http_request_completed', [
-            'request_id' => $request->attributes->get('request_id'),
-            'method' => $method,
-            'route' => $route,
-            'status' => $status,
-            'duration_ms' => round($duration * 1000, 2),
-        ]);
+        // Der Loki-Push ist optional und standardmäßig deaktiviert (siehe
+        // LOKI_ENABLED in .env) — ohne laufenden observability-stack würde
+        // sonst jeder Request einen bis zu zwei Sekunden dauernden HTTP-
+        // Timeout-Versuch im Hintergrund auslösen (LokiHandler fängt den
+        // Fehler zwar ab, die Ressourcenbindung bleibt aber unnötig).
+        if (config('logging.loki_enabled')) {
+            Log::channel('loki')->info('http_request_completed', [
+                'request_id' => $request->attributes->get('request_id'),
+                'method' => $method,
+                'route' => $route,
+                'status' => $status,
+                'duration_ms' => round($duration * 1000, 2),
+            ]);
+        }
     }
 }
