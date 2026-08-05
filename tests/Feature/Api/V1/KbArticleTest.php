@@ -6,6 +6,7 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\KbArticle;
 use App\Models\KbCategory;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -183,5 +184,17 @@ class KbArticleTest extends TestCase
     {
         $this->getJson('/api/v1/kb/articles')
             ->assertUnauthorized();
+    }
+
+    public function test_duplicate_slug_insert_throws_unique_constraint_violation(): void
+    {
+        // Validiert die Annahme, auf der KbArticleService::createWithUniqueSlug()
+        // basiert: Ein Verstoß gegen den UNIQUE-Index auf slug muss exakt diese
+        // Exception werfen, damit der Retry-Mechanismus sie zuverlässig abfängt.
+        KbArticle::factory()->create(['slug' => 'mein-slug']);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        KbArticle::factory()->create(['slug' => 'mein-slug']);
     }
 }

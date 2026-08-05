@@ -8,6 +8,7 @@ use App\Enums\ArticleStatus;
 use App\Models\KbArticle;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -55,13 +56,7 @@ class KbArticleService
             ? ArticleStatus::from($data['status'])
             : ArticleStatus::Draft;
 
-        $article = KbArticle::create([
-            ...$data,
-            'author_id' => $author->id,
-            'slug' => $this->uniqueSlug($data['title']),
-            'status' => $status,
-            'published_at' => $status === ArticleStatus::Published ? now() : null,
-        ]);
+        $article = $this->createWithUniqueSlug($author, $data, $status);
 
         if (! empty($data['tags'])) {
             $article->tags()->sync($data['tags']);
@@ -70,8 +65,52 @@ class KbArticleService
         return $article->load(['author', 'category', 'tags']);
     }
 
+    /**
+     * uniqueSlug() prüft per SELECT, ob ein Slug frei ist — zwischen dieser
+     * Prüfung und dem tatsächlichen INSERT liegt ein Zeitfenster, in dem ein
+     * paralleler Request mit identischem Titel denselben Slug ebenfalls als
+     * frei ansehen könnte (klassisches TOCTOU-Problem). Der DB-seitige
+     * UNIQUE-Index auf kb_articles.slug verhindert dabei zuverlässig echte
+     * Duplikate — ohne dieses Abfangen hier würde der zweite Request aber
+     * mit einer ungefangenen 500-Antwort abbrechen, statt sauber mit einem
+     * neuen Kandidaten weiterzumachen.
+     */
+    private function createWithUniqueSlug(User $author, array $data, ArticleStatus $status, int $attempt = 0): KbArticle
+    {
+        if ($attempt >= 5) {
+            throw new \RuntimeException('Konnte nach mehreren Versuchen keinen eindeutigen Slug generieren.');
+        }
+
+        try {
+            return KbArticle::create([
+                ...$data,
+                'author_id' => $author->id,
+                'slug' => $this->uniqueSlug($data['title']),
+                'status' => $status,
+                'published_at' => $status === ArticleStatus::Published ? now() : null,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // kb_articles hat aktuell nur einen UNIQUE-Index (slug) — jeder
+            // hier auftretende Verstoß ist also eine Slug-Kollision durch
+            // eine parallele Anfrage. Erneut versuchen: uniqueSlug() sieht
+            // beim zweiten Durchlauf den inzwischen committeten Datensatz
+            // der anderen Anfrage und wählt automatisch einen neuen Kandidaten.
+            return $this->createWithUniqueSlug($author, $data, $status, $attempt + 1);
+        }
+    }
+
     public function update(KbArticle $article, array $data): KbArticle
     {
+        return $this->updateWithUniqueSlug($article, $data);
+    }
+
+    /** Gleiches Race-Condition-Problem wie bei create(), gleiche Lösung. */
+    private function updateWithUniqueSlug(KbArticle $article, array $data, int $attempt = 0): KbArticle
+    {
+        if ($attempt >= 5) {
+            throw new \RuntimeException('Konnte nach mehreren Versuchen keinen eindeutigen Slug generieren.');
+        }
+
         if (isset($data['title']) && $data['title'] !== $article->title) {
             $data['slug'] = $this->uniqueSlug($data['title'], $article->id);
         }
@@ -84,7 +123,11 @@ class KbArticleService
             $data['published_at'] = now();
         }
 
-        $article->update($data);
+        try {
+            $article->update($data);
+        } catch (UniqueConstraintViolationException) {
+            return $this->updateWithUniqueSlug($article, $data, $attempt + 1);
+        }
 
         if (isset($data['tags'])) {
             $article->tags()->sync($data['tags']);
