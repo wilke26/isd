@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\KbArticles\Pages;
 
 use App\Filament\Resources\KbArticles\KbArticleResource;
+use App\Filament\Resources\KbArticles\KbArticleWorkflowActions;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
 use Filament\Actions\ViewAction;
@@ -19,6 +20,7 @@ class EditKbArticle extends EditRecord
     {
         return [
             ViewAction::make(),
+            ...KbArticleWorkflowActions::make(),
         ];
     }
 
