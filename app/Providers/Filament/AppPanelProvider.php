@@ -32,6 +32,20 @@ class AppPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => Color::Amber,
+                // Zusätzlich unter ihrem eigenen Namen registriert, damit
+                // TicketStatus::getColor()/TicketPriority::getColor() (die
+                // dieselben Farbnamen wiederverwenden, die im Rest des
+                // Projekts für Status-/Prioritäts-Badges gelten) von
+                // Filament tatsächlich aufgelöst werden — ohne explizite
+                // Registrierung kennt Filament nur seine eingebauten
+                // Aliase (danger/gray/info/primary/success/warning) und
+                // fällt sonst auf ungestylte Badges zurück.
+                'blue' => Color::Blue,
+                'amber' => Color::Amber,
+                'purple' => Color::Purple,
+                'green' => Color::Green,
+                'gray' => Color::Gray,
+                'red' => Color::Red,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

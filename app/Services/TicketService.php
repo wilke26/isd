@@ -85,6 +85,18 @@ class TicketService
      */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
+        // Ticket::casts() castet status/priority als echte BackedEnum-
+        // Instanzen. Unsere API liefert über JSON immer rohe Strings, aber
+        // Filaments Formular-Felder (siehe TicketForm) arbeiten direkt mit
+        // dem bereits gecasteten Attributwert und übergeben daher fertige
+        // Enum-Instanzen statt Strings. Hier einmalig auf rohe Werte
+        // normalisieren, damit der Rest der Methode unabhängig vom
+        // Aufrufer (API oder Filament) einheitlich arbeiten kann.
+        $data = array_map(
+            fn ($value) => $value instanceof \BackedEnum ? $value->value : $value,
+            $data,
+        );
+
         return DB::transaction(function () use ($ticket, $actor, $data) {
             // Sperrt die Ticket-Zeile für die Dauer der Transaktion und liest
             // den garantiert aktuellen Stand. Ohne das könnten zwei parallele
