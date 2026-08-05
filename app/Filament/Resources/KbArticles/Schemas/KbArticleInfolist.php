@@ -26,6 +26,10 @@ class KbArticleInfolist
                     ->placeholder('-'),
                 TextEntry::make('body')
                     ->columnSpanFull(),
+                TextEntry::make('addendum')
+                    ->label('Ergänzungen')
+                    ->placeholder('-')
+                    ->columnSpanFull(),
                 TextEntry::make('status')
                     ->badge(),
                 TextEntry::make('slug'),

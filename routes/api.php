@@ -49,5 +49,6 @@ Route::prefix('v1')->group(function () {
         Route::post('kb/articles/{id}/submit', [KbArticleController::class, 'submit']);
         Route::post('kb/articles/{id}/publish', [KbArticleController::class, 'publish']);
         Route::post('kb/articles/{id}/archive', [KbArticleController::class, 'archive']);
+        Route::post('kb/articles/{id}/addendum', [KbArticleController::class, 'addAddendum']);
     });
 });

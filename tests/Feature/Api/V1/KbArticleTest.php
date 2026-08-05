@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\V1;
 
+use App\Enums\ArticleStatus;
 use App\Models\KbArticle;
 use App\Models\KbCategory;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class KbArticleTest extends TestCase
@@ -196,5 +198,114 @@ class KbArticleTest extends TestCase
         $this->expectException(UniqueConstraintViolationException::class);
 
         KbArticle::factory()->create(['slug' => 'mein-slug']);
+    }
+
+    public function test_author_can_update_own_submitted_article(): void
+    {
+        $author = $this->actingAsAgent();
+        $article = KbArticle::factory()->create([
+            'author_id' => $author->id,
+            'status' => ArticleStatus::Submitted,
+        ]);
+
+        $response = $this->patchJson("/api/v1/kb/articles/{$article->id}", [
+            'title' => 'Aktualisierter Titel',
+            'body' => $article->body,
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('Aktualisierter Titel', $article->fresh()->title);
+    }
+
+    public function test_author_cannot_update_own_published_article(): void
+    {
+        // Bewusst ein Requester (nicht Staff) als Autor — Staff hat laut
+        // Policy jederzeit Bearbeitungsrecht, unabhängig vom Status. Nur ein
+        // nicht-Staff-Autor verliert es nach der Veröffentlichung.
+        $author = $this->createUser();
+        $article = KbArticle::factory()->create([
+            'author_id' => $author->id,
+            'status' => ArticleStatus::Published,
+        ]);
+
+        Sanctum::actingAs($author);
+
+        $response = $this->patchJson("/api/v1/kb/articles/{$article->id}", [
+            'title' => 'Sollte nicht klappen',
+            'body' => $article->body,
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_staff_can_add_addendum_to_published_article(): void
+    {
+        $this->actingAsAdmin();
+        $article = KbArticle::factory()->create(['status' => ArticleStatus::Published]);
+
+        $response = $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", [
+            'text' => 'Zusätzlicher Hinweis vom Staff.',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('Zusätzlicher Hinweis vom Staff.', $article->fresh()->addendum);
+    }
+
+    public function test_author_can_add_addendum_to_own_published_article(): void
+    {
+        $author = $this->actingAsAgent();
+        $article = KbArticle::factory()->create([
+            'author_id' => $author->id,
+            'status' => ArticleStatus::Published,
+        ]);
+
+        $response = $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", [
+            'text' => 'Nachtrag vom Autor selbst.',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('Nachtrag vom Autor selbst.', $article->fresh()->addendum);
+    }
+
+    public function test_other_user_cannot_add_addendum(): void
+    {
+        $author = $this->createAgent();
+        $article = KbArticle::factory()->create([
+            'author_id' => $author->id,
+            'status' => ArticleStatus::Published,
+        ]);
+
+        $this->actingAsUser();
+
+        $response = $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", [
+            'text' => 'Sollte nicht klappen.',
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_addenda_are_appended_not_overwritten(): void
+    {
+        $this->actingAsAdmin();
+        $article = KbArticle::factory()->create(['status' => ArticleStatus::Published]);
+
+        $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", ['text' => 'Erster Nachtrag.'])->assertOk();
+        $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", ['text' => 'Zweiter Nachtrag.'])->assertOk();
+
+        $addendum = $article->fresh()->addendum;
+        $this->assertStringContainsString('Erster Nachtrag.', $addendum);
+        $this->assertStringContainsString('Zweiter Nachtrag.', $addendum);
+    }
+
+    public function test_cannot_add_addendum_to_draft_article(): void
+    {
+        $this->actingAsAdmin();
+        $article = KbArticle::factory()->create(['status' => ArticleStatus::Draft]);
+
+        $response = $this->postJson("/api/v1/kb/articles/{$article->id}/addendum", [
+            'text' => 'Sollte nicht klappen.',
+        ]);
+
+        $response->assertForbidden();
     }
 }

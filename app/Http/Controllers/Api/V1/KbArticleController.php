@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\AddKbArticleAddendumRequest;
 use App\Http\Requests\Api\StoreKbArticleRequest;
 use App\Http\Resources\Api\KbArticleResource;
 use App\Models\KbArticle;
@@ -91,5 +92,20 @@ class KbArticleController extends Controller
         $this->authorize('archive', $article);
 
         return new KbArticleResource($this->kbService->archive($article));
+    }
+
+    /**
+     * Zeitgestempelte Ergänzung anhängen (Staff oder ursprünglicher Autor,
+     * nur bei bereits veröffentlichten/archivierten Artikeln) — der
+     * ursprüngliche Haupttext bleibt dabei unverändert.
+     */
+    public function addAddendum(AddKbArticleAddendumRequest $request, int $id): KbArticleResource
+    {
+        $article = $this->kbService->findOrFail($id);
+        $this->authorize('addAddendum', $article);
+
+        return new KbArticleResource(
+            $this->kbService->addAddendum($article, $request->user(), $request->validated()['text']),
+        );
     }
 }

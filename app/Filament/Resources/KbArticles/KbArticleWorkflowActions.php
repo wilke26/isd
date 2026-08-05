@@ -8,15 +8,15 @@ use App\Enums\ArticleStatus;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Zentrale Definition der drei Workflow-Aktionen (Einreichen/Veröffentlichen/
- * Archivieren), damit sie an allen drei Stellen, an denen sie sinnvoll
- * erreichbar sein sollen — Tabellen-Zeile, View-Seite, Edit-Seite —, exakt
- * gleich funktionieren, statt dreifach dupliziert zu werden.
+ * Zentrale Definition der Workflow-Aktionen, damit sie an allen Stellen, an
+ * denen sie sinnvoll erreichbar sein sollen — Tabellen-Zeile, View-Seite,
+ * Edit-Seite —, exakt gleich funktionieren, statt dupliziert zu werden.
  */
 class KbArticleWorkflowActions
 {
@@ -68,6 +68,25 @@ class KbArticleWorkflowActions
                     } catch (ValidationException $e) {
                         Notification::make()->danger()->title(collect($e->errors())->flatten()->first())->send();
                     }
+                }),
+            // Nur bei bereits veröffentlichten/archivierten Artikeln
+            // sinnvoll — vorher greift stattdessen das reguläre
+            // Bearbeitungsrecht (direktes Ändern des Haupttextes).
+            Action::make('addAddendum')
+                ->label('Ergänzen')
+                ->icon(Heroicon::OutlinedPencilSquare)
+                ->color('gray')
+                ->visible(fn (KbArticle $record) => auth()->user()->can('addAddendum', $record))
+                ->schema([
+                    Textarea::make('text')
+                        ->label('Ergänzung')
+                        ->helperText('Wird mit Zeitstempel und deinem Namen an den Artikel angehängt — der ursprüngliche Text bleibt unverändert.')
+                        ->required()
+                        ->rows(4),
+                ])
+                ->action(function (KbArticle $record, array $data): void {
+                    app(KbArticleService::class)->addAddendum($record, auth()->user(), $data['text']);
+                    Notification::make()->success()->title('Ergänzung hinzugefügt.')->send();
                 }),
         ];
     }

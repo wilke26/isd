@@ -136,6 +136,31 @@ class KbArticleService
         return $article->fresh(['author', 'category', 'tags']);
     }
 
+    /**
+     * Hängt eine zeitgestempelte Ergänzung an — additiv, der ursprüngliche
+     * Haupttext (body) bleibt dabei unangetastet. Für Staff und den
+     * ursprünglichen Autor gleichberechtigt nutzbar (siehe
+     * KbArticlePolicy::addAddendum()), ausschließlich bei bereits
+     * veröffentlichten oder archivierten Artikeln.
+     */
+    public function addAddendum(KbArticle $article, User $author, string $text): KbArticle
+    {
+        $entry = sprintf(
+            "[%s — %s]\n%s",
+            now()->format('d.m.Y H:i'),
+            $author->name,
+            trim($text),
+        );
+
+        $article->addendum = $article->addendum
+            ? $article->addendum . "\n\n" . $entry
+            : $entry;
+
+        $article->save();
+
+        return $article->fresh(['author', 'category', 'tags']);
+    }
+
     /** Entwurf zur redaktionellen Prüfung einreichen (nur aus dem Draft-Status) */
     public function submit(KbArticle $article): KbArticle
     {

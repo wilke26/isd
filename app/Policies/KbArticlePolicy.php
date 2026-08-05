@@ -42,9 +42,12 @@ class KbArticlePolicy
     }
 
     /**
-     * Bearbeiten: Staff jederzeit; Autor nur solange der Artikel noch Entwurf ist.
-     * Nach dem Einreichen (submitted) oder der Veröffentlichung darf der Autor
-     * nicht mehr eigenmächtig verändern.
+     * Bearbeiten: Staff jederzeit; Autor solange der Artikel noch nicht
+     * veröffentlicht ist (Entwurf ODER bereits eingereicht — vor der
+     * Veröffentlichung gibt es nichts, dessen Stabilität geschützt werden
+     * müsste, direktes Bearbeiten ist hier der einfachste Weg). Nach der
+     * Veröffentlichung greift stattdessen addAddendum() — der Haupttext
+     * bleibt dann stabil, Ergänzungen kommen additiv dazu.
      */
     public function update(User $user, KbArticle $article): bool
     {
@@ -52,7 +55,8 @@ class KbArticlePolicy
             return true;
         }
 
-        return $this->isAuthor($user, $article) && $article->status === ArticleStatus::Draft;
+        return $this->isAuthor($user, $article)
+            && in_array($article->status, [ArticleStatus::Draft, ArticleStatus::Submitted], true);
     }
 
     /** Zur Prüfung einreichen — nur der Autor, nur aus dem Entwurfsstatus heraus */
@@ -70,6 +74,23 @@ class KbArticlePolicy
     public function archive(User $user, KbArticle $article): bool
     {
         return $this->isStaff($user);
+    }
+
+    /**
+     * Zeitgestempelte Ergänzung anhängen — Staff und ursprünglicher Autor
+     * gleichberechtigt, aber ausschließlich bei bereits veröffentlichten
+     * oder archivierten Artikeln. Für Entwürfe/eingereichte Artikel gilt
+     * stattdessen das reguläre Bearbeitungsrecht aus update() — eine
+     * additive Ergänzung wäre dort überflüssig, da direktes Ändern noch
+     * möglich ist.
+     */
+    public function addAddendum(User $user, KbArticle $article): bool
+    {
+        if (! in_array($article->status, [ArticleStatus::Published, ArticleStatus::Archived], true)) {
+            return false;
+        }
+
+        return $this->isStaff($user) || $this->isAuthor($user, $article);
     }
 
     /**

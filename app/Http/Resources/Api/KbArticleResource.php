@@ -20,6 +20,7 @@ class KbArticleResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'body' => $this->body,
+            'addendum' => $this->addendum,
             'status' => [
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
