@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum ArticleStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum ArticleStatus: string implements HasColor, HasLabel
 {
     case Draft = 'draft';
     case Submitted = 'submitted';
@@ -19,5 +22,25 @@ enum ArticleStatus: string
             self::Published => 'Veröffentlicht',
             self::Archived => 'Archiviert',
         };
+    }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::Draft => 'gray',
+            self::Submitted => 'amber',
+            self::Published => 'green',
+            self::Archived => 'purple',
+        };
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return $this->color();
     }
 }
