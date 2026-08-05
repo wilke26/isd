@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum TicketStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum TicketStatus: string implements HasColor, HasLabel
 {
     case Open = 'open';
     case InProgress = 'in_progress';
@@ -32,6 +35,22 @@ enum TicketStatus: string
             self::Resolved => 'green',
             self::Closed => 'gray',
         };
+    }
+
+    // ─── Filament-Interfaces ────────────────────────────────────────
+    // Delegieren bewusst an die bestehenden label()/color()-Methoden,
+    // statt sie zu duplizieren — Filament-Badges (Tabelle, Infolist)
+    // übernehmen dadurch automatisch dieselben Bezeichnungen und Farben,
+    // die auch sonst im Projekt für diesen Status gelten.
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return $this->color();
     }
 
     /**

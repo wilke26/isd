@@ -47,12 +47,24 @@ class TicketService
         ])->findOrFail($id);
     }
 
-    public function create(User $requester, array $data): Ticket
+    /**
+     * $requester ist der ausführende/protokollierte Akteur (u.a. für die
+     * History) und standardmäßig auch der fachliche Ticket-Requester.
+     *
+     * @param int|null $requesterId Nur von vertrauenswürdigen, internen
+     *                              Aufrufern (z.B. dem Filament-Panel für Staff) explizit gesetzt,
+     *                              um ein Ticket im Namen eines anderen Benutzers anzulegen (z.B.
+     *                              ein telefonisch gemeldetes Problem). Weicht dann vom fachlichen
+     *                              Requester ab. Die öffentliche API nutzt diesen Parameter nie —
+     *                              dort bleibt der Requester ausschließlich der authentifizierte
+     *                              Nutzer selbst, exakt wie zuvor.
+     */
+    public function create(User $requester, array $data, ?int $requesterId = null): Ticket
     {
-        return DB::transaction(function () use ($requester, $data) {
+        return DB::transaction(function () use ($requester, $data, $requesterId) {
             $ticket = Ticket::create([
                 ...$data,
-                'requester_id' => $requester->id,
+                'requester_id' => $requesterId ?? $requester->id,
                 'status' => TicketStatus::Open,
                 // Explizit setzen statt auf den DB-Default zu vertrauen — Eloquent
                 // liest server-seitige Defaults nicht automatisch ins frische
