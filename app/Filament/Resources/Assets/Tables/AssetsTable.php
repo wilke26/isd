@@ -14,6 +14,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
+use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
@@ -34,7 +35,12 @@ class AssetsTable
                     ->searchable(),
                 TextColumn::make('status.name')
                     ->label('Status')
-                    ->badge(),
+                    ->badge()
+                    // AssetStatus ist eine DB-Tabelle mit rohem Hex-Wert
+                    // (asset_statuses.color), kein PHP-Enum mit HasColor wie
+                    // bei TicketStatus — Color::hex() generiert daraus zur
+                    // Laufzeit eine passende Farbpalette.
+                    ->color(fn ($record) => Color::hex($record->status->color)),
                 TextColumn::make('parent.name')
                     ->label('Parent Asset')
                     ->placeholder('-'),

@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Assets\Schemas;
 use App\Models\Asset;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
+use Filament\Support\Colors\Color;
 
 class AssetInfolist
 {
@@ -20,7 +21,8 @@ class AssetInfolist
                     ->label('Category'),
                 TextEntry::make('status.name')
                     ->label('Status')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Asset $record) => Color::hex($record->status->color)),
                 TextEntry::make('parent.name')
                     ->label('Parent Asset')
                     ->placeholder('-'),
