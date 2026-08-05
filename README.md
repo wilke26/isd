@@ -14,7 +14,6 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 - [API-Dokumentation](#api-dokumentation)
 - [Autorisierung](#autorisierung)
 - [Observability](#observability)
-- [Demo-Ablauf](#demo-ablauf-für-bewerbungsgespräche)
 - [Tests](#tests)
 - [Datenbankschema](#datenbankschema)
 - [CI/CD](#cicd)
@@ -23,7 +22,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 ---
 
 ## Features
-**Fokus:** Tickets, Assets und Autorisierung bilden den fachlichen Kern und zeigen die eigentliche Substanz (Statusmaschine, echte Rechteprüfung, Audit Trail). Wissensdatenbank und Lizenzverwaltung sind bewusst als erweiterte Module angelegt — vollständig funktionsfähig und getestet, aber nicht der Schwerpunkt. Siehe [DEMO.md](DEMO.md) für einen konkreten Ablauf.
+**Fokus:** Tickets, Assets und Autorisierung bilden den fachlichen Kern und zeigen die eigentliche Substanz (Statusmaschine, echte Rechteprüfung, Audit Trail). Wissensdatenbank und Lizenzverwaltung sind bewusst als erweiterte Module angelegt — vollständig funktionsfähig und getestet, aber nicht der Schwerpunkt.
 
 ### Asset-Management
 - Verwaltung von Geräten, Servern, Lizenzen und Netzwerkinfrastruktur
@@ -224,12 +223,6 @@ Grafana :3000 ──> Prometheus, Loki
 - **Request-ID-Korrelation:** Response-Header `X-Request-Id` → LogQL-Suche `{job="isd"} | json | request_id="..."`
 
 Details zur Einrichtung siehe [INSTALLATION.md](INSTALLATION.md#observability-anbindung).
-
----
-
-## Demo-Ablauf für Bewerbungsgespräche
-
-Siehe [DEMO.md](DEMO.md) für ein konkretes, copy-paste-fähiges Skript (curl-Befehle), das die zentralen Eigenschaften des Systems in ca. 10–15 Minuten zeigt: erzwungene Autorisierung, die verbindliche Ticket-Statusmatrix samt automatischem Übergang, serverseitig gefilterte interne Kommentare, eingeschränkte Asset-Historie und den laufenden Observability-Stack.
 
 ---
 
