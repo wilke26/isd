@@ -8,6 +8,7 @@ use App\Filament\Resources\Tickets\Pages\CreateTicket;
 use App\Filament\Resources\Tickets\Pages\EditTicket;
 use App\Filament\Resources\Tickets\Pages\ListTickets;
 use App\Filament\Resources\Tickets\Pages\ViewTicket;
+use App\Filament\Resources\Tickets\RelationManagers\AttachmentsRelationManager;
 use App\Filament\Resources\Tickets\Schemas\TicketForm;
 use App\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use App\Filament\Resources\Tickets\Tables\TicketsTable;
@@ -45,7 +46,7 @@ class TicketResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AttachmentsRelationManager::class,
         ];
     }
 

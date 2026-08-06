@@ -29,6 +29,9 @@ Route::prefix('v1')->group(function () {
         Route::get('tickets/{id}', [TicketController::class, 'show']);
         Route::patch('tickets/{id}', [TicketController::class, 'update']);
         Route::post('tickets/{id}/comments', [TicketController::class, 'addComment']);
+        Route::post('tickets/{id}/attachments', [TicketController::class, 'storeAttachment']);
+        Route::get('tickets/{id}/attachments/{attachmentId}', [TicketController::class, 'downloadAttachment']);
+        Route::delete('tickets/{id}/attachments/{attachmentId}', [TicketController::class, 'destroyAttachment']);
 
         // Assets
         Route::get('assets', [AssetController::class, 'index']);

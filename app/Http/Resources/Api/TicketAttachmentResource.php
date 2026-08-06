@@ -20,7 +20,8 @@ class TicketAttachmentResource extends JsonResource
             'filename' => $this->filename,
             'mime_type' => $this->mime_type,
             'size' => $this->size,
-            'size_human' => $this->humanReadableSize(),
+            'human_readable_size' => $this->humanReadableSize(),
+            'uploaded_by' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at->toIso8601String(),
         ];
     }

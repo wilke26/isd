@@ -8,19 +8,19 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Exceptions\InvalidTicketStatusTransitionException;
 use App\Models\Ticket;
+use App\Models\TicketAttachment;
 use App\Models\TicketHistory;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
-/**
- * Service-Klasse für die Verwaltung von Tickets.
- */
 class TicketService
 {
     /**
-     * Gibt eine gefilterte und paginierte Liste von Tickets zurück.
-     * Administratoren und Agents sehen alle Tickets, andere Benutzer nur ihre eigenen.
+     * Gefilterte, paginierte Ticket-Liste.
+     * Agents sehen alle Tickets, normale User nur ihre eigenen.
      */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
@@ -37,10 +37,6 @@ class TicketService
         return $query->paginate($filters['per_page'] ?? 15);
     }
 
-    /**
-     * Findet ein Ticket anhand seiner ID oder wirft eine Exception.
-     * Lädt zusätzlich alle relevanten Beziehungen.
-     */
     public function findOrFail(int $id): Ticket
     {
         return Ticket::with([
@@ -55,9 +51,8 @@ class TicketService
     }
 
     /**
-     * Erstellt ein neues Ticket. $requester ist der ausführende/protokollierte
-     * Akteur (u.a. für die History) und standardmäßig auch der fachliche
-     * Ticket-Requester.
+     * $requester ist der ausführende/protokollierte Akteur (u.a. für die
+     * History) und standardmäßig auch der fachliche Ticket-Requester.
      *
      * @param int|null $requesterId Nur von vertrauenswürdigen, internen
      *                              Aufrufern (z.B. dem Filament-Panel für Staff) explizit gesetzt,
@@ -87,8 +82,6 @@ class TicketService
     }
 
     /**
-     * Aktualisiert ein bestehendes Ticket.
-     *
      * @throws InvalidTicketStatusTransitionException wenn ein unzulässiger
      *                                                Statusübergang versucht wird (z.B. open → closed direkt).
      *                                                Gilt einheitlich für alle Rollen, auch Admins.
@@ -206,6 +199,33 @@ class TicketService
                 $ticket->update(['status' => TicketStatus::InProgress]);
             }
         });
+    }
+
+    /**
+     * Speichert einen Anhang auf der privaten Storage-Disk unter einem
+     * zufälligen Dateinamen (nie den vom Client mitgeschickten Namen als
+     * Pfad verwenden — Path-Traversal-Risiko). Der ursprüngliche Dateiname
+     * bleibt für die Anzeige separat in der DB erhalten.
+     */
+    public function addAttachment(Ticket $ticket, User $uploader, UploadedFile $file): TicketAttachment
+    {
+        $storedPath = $file->store("ticket-attachments/{$ticket->id}", 'local');
+
+        return TicketAttachment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $uploader->id,
+            'filename' => $file->getClientOriginalName(),
+            'path' => $storedPath,
+            'mime_type' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
+        ]);
+    }
+
+    /** Entfernt sowohl die Datei von der Disk als auch den DB-Datensatz. */
+    public function deleteAttachment(TicketAttachment $attachment): void
+    {
+        Storage::disk('local')->delete($attachment->path);
+        $attachment->delete();
     }
 
     private function recordHistory(Ticket $ticket, User $actor, string $field, ?string $old, ?string $new): void

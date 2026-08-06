@@ -9,6 +9,9 @@ use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TicketTest extends TestCase
@@ -285,5 +288,116 @@ class TicketTest extends TestCase
     {
         $this->getJson('/api/v1/tickets')
             ->assertUnauthorized();
+    }
+
+    public function test_requester_can_upload_attachment_to_own_ticket(): void
+    {
+        Storage::fake('local');
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+
+        Sanctum::actingAs($requester);
+        $file = UploadedFile::fake()->create('screenshot.png', 100, 'image/png');
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('ticket_attachments', [
+            'ticket_id' => $ticket->id,
+            'filename' => 'screenshot.png',
+        ]);
+    }
+
+    public function test_requester_cannot_upload_attachment_to_others_ticket(): void
+    {
+        Storage::fake('local');
+
+        $ticket = Ticket::factory()->create();
+        $this->actingAsUser();
+        $file = UploadedFile::fake()->create('file.pdf', 100, 'application/pdf');
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_staff_can_upload_attachment_to_any_ticket(): void
+    {
+        Storage::fake('local');
+
+        $ticket = Ticket::factory()->create();
+        $this->actingAsAgent();
+        $file = UploadedFile::fake()->create('log.txt', 50, 'text/plain');
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file]);
+
+        $response->assertCreated();
+    }
+
+    public function test_attachment_can_be_downloaded_by_ticket_viewer(): void
+    {
+        Storage::fake('local');
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+
+        Sanctum::actingAs($requester);
+        $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+
+        $response = $this->get("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
+
+        $response->assertOk();
+    }
+
+    public function test_uploader_can_delete_own_attachment(): void
+    {
+        Storage::fake('local');
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+
+        Sanctum::actingAs($requester);
+        $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+
+        $response = $this->deleteJson("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
+
+        $response->assertOk();
+        $this->assertDatabaseMissing('ticket_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_other_requester_cannot_delete_attachment(): void
+    {
+        Storage::fake('local');
+
+        $uploader = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $uploader->id]);
+
+        Sanctum::actingAs($uploader);
+        $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+
+        Sanctum::actingAs(User::factory()->create());
+
+        $response = $this->deleteJson("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
+
+        $response->assertForbidden();
+    }
+
+    public function test_attachment_upload_rejects_invalid_file_type(): void
+    {
+        Storage::fake('local');
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+
+        Sanctum::actingAs($requester);
+        $file = UploadedFile::fake()->create('script.exe', 100, 'application/x-msdownload');
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file]);
+
+        $response->assertUnprocessable();
     }
 }

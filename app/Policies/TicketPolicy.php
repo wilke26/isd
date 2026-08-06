@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Ticket;
+use App\Models\TicketAttachment;
 use App\Models\User;
 
 class TicketPolicy
@@ -47,5 +48,22 @@ class TicketPolicy
     public function commentInternally(User $user, Ticket $ticket): bool
     {
         return $this->isStaff($user);
+    }
+
+    /**
+     * Anhang hochladen — dieselbe Berechtigung wie ein öffentlicher
+     * Kommentar (Staff oder der eigene Requester). Anhänge haben kein
+     * "intern"-Konzept wie Kommentare — wer das Ticket sehen darf, darf
+     * auch alle seine Anhänge sehen.
+     */
+    public function addAttachment(User $user, Ticket $ticket): bool
+    {
+        return $this->isStaff($user) || $ticket->requester_id === $user->id;
+    }
+
+    /** Anhang löschen — Staff oder wer ihn selbst hochgeladen hat */
+    public function deleteAttachment(User $user, Ticket $ticket, TicketAttachment $attachment): bool
+    {
+        return $this->isStaff($user) || $attachment->user_id === $user->id;
     }
 }
