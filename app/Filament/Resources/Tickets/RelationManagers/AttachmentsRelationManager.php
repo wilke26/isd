@@ -19,6 +19,11 @@ use Filament\Tables\Table;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Anhänge-Tab auf der Ticket-Detailseite im Filament-Panel: Upload,
+ * Download und Löschen laufen über TicketService, nicht über Filaments
+ * Standard-CRUD, damit dieselbe Logik wie in der REST-API gilt.
+ */
 class AttachmentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'attachments';

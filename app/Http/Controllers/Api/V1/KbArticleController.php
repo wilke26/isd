@@ -14,6 +14,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * REST-API-Controller für Knowledge-Base-Artikel: CRUD sowie den
+ * Workflow (einreichen/veröffentlichen/archivieren/ergänzen).
+ */
 class KbArticleController extends Controller
 {
     public function __construct(

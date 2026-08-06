@@ -15,6 +15,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * REST-API-Controller für Asset-CRUD sowie Zuweisung/Freigabe und Historie.
+ */
 class AssetController extends Controller
 {
     public function __construct(
@@ -87,6 +90,8 @@ class AssetController extends Controller
     public function unassign(int $id): JsonResponse
     {
         $asset = $this->assetService->findOrFail($id);
+        // Keine eigene 'unassign'-Ability — wer zuweisen darf, darf auch
+        // freigeben, beides ist derselbe Staff-only-Vorgang.
         $this->authorize('assign', $asset);
 
         $this->assetService->unassign($asset);

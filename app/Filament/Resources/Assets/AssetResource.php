@@ -20,6 +20,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+/**
+ * Filament-Ressource für Assets: Formular, Detailansicht und Tabelle
+ * verweisen auf die jeweils dedizierten Konfigurationsklassen im Ordner.
+ */
 class AssetResource extends Resource
 {
     protected static ?string $model = Asset::class;

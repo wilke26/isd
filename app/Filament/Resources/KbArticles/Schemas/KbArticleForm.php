@@ -9,6 +9,10 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
+/**
+ * Formularfelder für Anlegen/Bearbeiten eines KB-Artikels im
+ * Filament-Panel.
+ */
 class KbArticleForm
 {
     public static function configure(Schema $schema): Schema

@@ -9,6 +9,9 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+/**
+ * Tabellenkonfiguration für die Ticket-Listenansicht im Filament-Panel.
+ */
 class TicketsTable
 {
     public static function configure(Table $table): Table

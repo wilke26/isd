@@ -13,6 +13,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
+/**
+ * Tabellenkonfiguration für die KB-Artikel-Listenansicht im Filament-Panel,
+ * inklusive der Workflow-Aktionen aus KbArticleWorkflowActions.
+ */
 class KbArticlesTable
 {
     public static function configure(Table $table): Table

@@ -19,6 +19,9 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * REST-API-Controller für Ticket-CRUD sowie Kommentare und Anhänge.
+ */
 class TicketController extends Controller
 {
     public function __construct(

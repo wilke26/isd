@@ -21,6 +21,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+/**
+ * Filament-Ressource für Knowledge-Base-Artikel: Formular, Detailansicht
+ * und Tabelle verweisen auf die jeweils dedizierten Konfigurationsklassen
+ * im Ordner.
+ */
 class KbArticleResource extends Resource
 {
     protected static ?string $model = KbArticle::class;

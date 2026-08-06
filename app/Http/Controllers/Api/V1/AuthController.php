@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Sanctum-Token-basierte Authentifizierung für die REST-API.
+ */
 class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
@@ -27,6 +30,8 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+        // Ablaufzeit wird nicht hier, sondern global über
+        // config('sanctum.expiration') gesetzt (SANCTUM_TOKEN_EXPIRATION).
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([

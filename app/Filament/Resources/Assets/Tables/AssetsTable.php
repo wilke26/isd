@@ -20,6 +20,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
+/**
+ * Tabellenkonfiguration für die Asset-Listenansicht im Filament-Panel,
+ * inklusive der eigenen Zuweisen/Freigeben-Aktionen.
+ */
 class AssetsTable
 {
     public static function configure(Table $table): Table

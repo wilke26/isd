@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Versieht jeden Request mit einer eindeutigen ID (Request-Attribut,
+ * Log-Kontext und Response-Header), damit sich sein Verlauf durchgängig
+ * nachverfolgen lässt.
+ */
 class AssignRequestId
 {
     private const HEADER = 'X-Request-Id';

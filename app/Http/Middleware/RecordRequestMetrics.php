@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Erfasst Dauer und Ergebnis jedes Requests für /metrics (Redis) und
+ * optional für Loki — als terminable Middleware, siehe terminate().
+ */
 class RecordRequestMetrics
 {
     public function handle(Request $request, Closure $next): Response

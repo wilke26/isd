@@ -20,6 +20,10 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Filament-Ressource für Tickets: Formular, Detailansicht und Tabelle
+ * verweisen auf die jeweils dedizierten Konfigurationsklassen im Ordner.
+ */
 class TicketResource extends Resource
 {
     protected static ?string $model = Ticket::class;

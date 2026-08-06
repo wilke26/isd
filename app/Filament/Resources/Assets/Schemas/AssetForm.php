@@ -12,6 +12,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Formularfelder für Anlegen/Bearbeiten eines Assets im Filament-Panel.
+ */
 class AssetForm
 {
     public static function configure(Schema $schema): Schema

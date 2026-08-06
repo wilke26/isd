@@ -20,6 +20,10 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+/**
+ * Konfiguriert das Filament-Admin-Panel unter /app (Ressourcen, Farben,
+ * Middleware-Stack).
+ */
 class AppPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel

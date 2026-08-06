@@ -11,6 +11,8 @@ class UpdateAssetRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // Autorisierung läuft explizit im Controller über die Policy
+        // (update), nicht hier — konsistent mit dem übrigen Projekt.
         return true;
     }
 
