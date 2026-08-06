@@ -11,8 +11,15 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Service-Klasse für die Verwaltung von Assets.
+ */
 class AssetService
 {
+    /**
+     * Gibt eine gefilterte und paginierte Liste von Assets zurück.
+     * Administratoren und Agents sehen alle Assets, andere Benutzer nur die ihnen zugewiesenen.
+     */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
         $isStaff = $user->hasRole('admin') || $user->hasRole('agent');
@@ -35,6 +42,10 @@ class AssetService
             ->paginate($filters['per_page'] ?? 15);
     }
 
+    /**
+     * Findet ein Asset anhand seiner ID oder wirft eine Exception.
+     * Lädt alle relevanten Beziehungen für die Detailansicht.
+     */
     public function findOrFail(int $id): Asset
     {
         return Asset::with([
@@ -51,11 +62,17 @@ class AssetService
         ])->findOrFail($id);
     }
 
+    /**
+     * Erstellt ein neues Asset.
+     */
     public function create(array $data): Asset
     {
         return Asset::create($data)->load(['category', 'status']);
     }
 
+    /**
+     * Aktualisiert ein bestehendes Asset.
+     */
     public function update(Asset $asset, array $data): Asset
     {
         $asset->update($data);
@@ -63,6 +80,9 @@ class AssetService
         return $asset->fresh(['category', 'status']);
     }
 
+    /**
+     * Löscht ein Asset (Soft-Delete).
+     */
     public function delete(Asset $asset): void
     {
         $asset->delete();
@@ -90,6 +110,9 @@ class AssetService
         });
     }
 
+    /**
+     * Nimmt die Zuweisung eines Assets zurück (Asset wird zurückgegeben).
+     */
     public function unassign(Asset $asset): void
     {
         DB::transaction(function () use ($asset) {
@@ -102,6 +125,8 @@ class AssetService
     }
 
     /**
+     * Gibt die vollständige Zuweisungshistorie eines Assets zurück.
+     *
      * @return Collection<int, AssetAssignment>
      */
     public function assignmentHistory(Asset $asset): Collection

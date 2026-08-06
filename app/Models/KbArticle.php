@@ -12,13 +12,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * Repräsentiert einen Artikel in der Wissensdatenbank (Knowledge Base).
+ *
  * @mixin IdeHelperKbArticle
  */
 class KbArticle extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /** @var list<string> */
+    /**
+     * Die Attribute, die massenzuweisbar sind.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'author_id',
         'category_id',
@@ -29,6 +35,9 @@ class KbArticle extends Model
         'published_at',
     ];
 
+    /**
+     * Die Attribute, die konvertiert werden sollen.
+     */
     protected function casts(): array
     {
         return [
@@ -37,21 +46,33 @@ class KbArticle extends Model
         ];
     }
 
+    /**
+     * Gibt den Autor des Artikels zurück.
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
     }
 
+    /**
+     * Gibt die Kategorie des Artikels zurück.
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(KbCategory::class);
     }
 
+    /**
+     * Gibt die Schlagwörter (Tags) des Artikels zurück.
+     */
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'kb_article_tag');
     }
 
+    /**
+     * Prüft, ob der Artikel veröffentlicht ist.
+     */
     public function isPublished(): bool
     {
         return $this->status === ArticleStatus::Published;

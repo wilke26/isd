@@ -7,6 +7,9 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Enum für den Status eines Wissensdatenbank-Artikels.
+ */
 enum ArticleStatus: string implements HasColor, HasLabel
 {
     case Draft = 'draft';
@@ -14,6 +17,9 @@ enum ArticleStatus: string implements HasColor, HasLabel
     case Published = 'published';
     case Archived = 'archived';
 
+    /**
+     * Gibt die deutsche Bezeichnung des Artikelstatus zurück.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -24,6 +30,9 @@ enum ArticleStatus: string implements HasColor, HasLabel
         };
     }
 
+    /**
+     * Gibt die Farbe für die Darstellung des Artikelstatus zurück.
+     */
     public function color(): string
     {
         return match ($this) {

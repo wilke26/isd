@@ -7,6 +7,10 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Enum für die verschiedenen Status eines Tickets.
+ * Implementiert Filament-Interfaces für die Darstellung in der UI.
+ */
 enum TicketStatus: string implements HasColor, HasLabel
 {
     case Open = 'open';
@@ -15,6 +19,9 @@ enum TicketStatus: string implements HasColor, HasLabel
     case Resolved = 'resolved';
     case Closed = 'closed';
 
+    /**
+     * Gibt die deutsche Bezeichnung des Status zurück.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -26,6 +33,9 @@ enum TicketStatus: string implements HasColor, HasLabel
         };
     }
 
+    /**
+     * Gibt die Farbe für die Darstellung des Status zurück.
+     */
     public function color(): string
     {
         return match ($this) {

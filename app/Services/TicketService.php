@@ -13,11 +13,14 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Service-Klasse für die Verwaltung von Tickets.
+ */
 class TicketService
 {
     /**
-     * Gefilterte, paginierte Ticket-Liste.
-     * Agents sehen alle Tickets, normale User nur ihre eigenen.
+     * Gibt eine gefilterte und paginierte Liste von Tickets zurück.
+     * Administratoren und Agents sehen alle Tickets, andere Benutzer nur ihre eigenen.
      */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
@@ -34,6 +37,10 @@ class TicketService
         return $query->paginate($filters['per_page'] ?? 15);
     }
 
+    /**
+     * Findet ein Ticket anhand seiner ID oder wirft eine Exception.
+     * Lädt zusätzlich alle relevanten Beziehungen.
+     */
     public function findOrFail(int $id): Ticket
     {
         return Ticket::with([
@@ -48,8 +55,9 @@ class TicketService
     }
 
     /**
-     * $requester ist der ausführende/protokollierte Akteur (u.a. für die
-     * History) und standardmäßig auch der fachliche Ticket-Requester.
+     * Erstellt ein neues Ticket. $requester ist der ausführende/protokollierte
+     * Akteur (u.a. für die History) und standardmäßig auch der fachliche
+     * Ticket-Requester.
      *
      * @param int|null $requesterId Nur von vertrauenswürdigen, internen
      *                              Aufrufern (z.B. dem Filament-Panel für Staff) explizit gesetzt,
@@ -79,6 +87,8 @@ class TicketService
     }
 
     /**
+     * Aktualisiert ein bestehendes Ticket.
+     *
      * @throws InvalidTicketStatusTransitionException wenn ein unzulässiger
      *                                                Statusübergang versucht wird (z.B. open → closed direkt).
      *                                                Gilt einheitlich für alle Rollen, auch Admins.

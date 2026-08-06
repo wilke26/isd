@@ -9,8 +9,14 @@ use App\Models\Ticket;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * Controller für die Bereitstellung von Prometheus-Metriken.
+ */
 class MetricsController extends Controller
 {
+    /**
+     * Sammelt alle Metriken und gibt sie im Plain-Text-Format zurück.
+     */
     public function __invoke(): Response
     {
         $lines = [];

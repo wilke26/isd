@@ -7,6 +7,9 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
+/**
+ * Enum für die Prioritätsstufen eines Tickets.
+ */
 enum TicketPriority: string implements HasColor, HasLabel
 {
     case Low = 'low';
@@ -14,6 +17,9 @@ enum TicketPriority: string implements HasColor, HasLabel
     case High = 'high';
     case Critical = 'critical';
 
+    /**
+     * Gibt die deutsche Bezeichnung der Priorität zurück.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -24,6 +30,9 @@ enum TicketPriority: string implements HasColor, HasLabel
         };
     }
 
+    /**
+     * Gibt die Farbe für die Darstellung der Priorität zurück.
+     */
     public function color(): string
     {
         return match ($this) {

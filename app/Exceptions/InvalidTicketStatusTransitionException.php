@@ -8,6 +8,9 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Exception, die geworfen wird, wenn ein ungültiger Statusübergang für ein Ticket versucht wird.
+ */
 class InvalidTicketStatusTransitionException extends Exception
 {
     public function __construct(
