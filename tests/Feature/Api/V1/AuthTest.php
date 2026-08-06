@@ -88,4 +88,34 @@ class AuthTest extends TestCase
         $this->postJson('/api/v1/auth/login', $payload)
             ->assertStatus(429);
     }
+
+    public function test_expired_token_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        // Liegt weiter in der Vergangenheit als die konfigurierte Ablaufzeit
+        // (SANCTUM_TOKEN_EXPIRATION, aktuell 4320 Minuten = 3 Tage).
+        $this->travel(4321)->minutes();
+
+        $response = $this->getJson('/api/v1/auth/me', [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $response->assertUnauthorized();
+    }
+
+    public function test_token_within_expiration_window_still_works(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $this->travel(4319)->minutes();
+
+        $response = $this->getJson('/api/v1/auth/me', [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $response->assertOk();
+    }
 }
