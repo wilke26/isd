@@ -11,9 +11,8 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Versieht jeden Request mit einer eindeutigen ID (Request-Attribut,
- * Log-Kontext und Response-Header), damit sich sein Verlauf durchgängig
- * nachverfolgen lässt.
+ * Assigns each request a unique ID (request attribute, log context and
+ * response header), so its journey can be traced end to end.
  */
 class AssignRequestId
 {
@@ -21,14 +20,14 @@ class AssignRequestId
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Falls ein vorgelagerter Proxy/Load-Balancer bereits eine Request-ID
-        // mitschickt, diese übernehmen statt eine neue zu erzeugen — so bleibt
-        // die Kette über mehrere Systeme hinweg nachvollziehbar.
+        // If an upstream proxy/load balancer already sends a request ID,
+        // adopt it instead of generating a new one — this keeps the chain
+        // traceable across multiple systems.
         $requestId = $request->header(self::HEADER) ?: (string) Str::uuid();
 
         $request->attributes->set('request_id', $requestId);
 
-        // Wird jedem Log-Aufruf innerhalb dieses Requests automatisch beigefügt.
+        // Automatically attached to every log call within this request.
         Log::shareContext(['request_id' => $requestId]);
 
         $response = $next($request);

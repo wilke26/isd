@@ -20,8 +20,8 @@ class KbArticleService
 
         return KbArticle::with(['author', 'category', 'tags'])
             ->when(! $isStaff, function ($q) use ($user) {
-                // Nicht-Staff sieht veröffentlichte Artikel sowie die eigenen
-                // (unabhängig vom Status — Entwurf, eingereicht, archiviert).
+                // Non-staff see published articles as well as their own
+                // (regardless of status — draft, submitted, archived).
                 $q->where(function ($q2) use ($user) {
                     $q2->where('status', ArticleStatus::Published)
                         ->orWhere('author_id', $user->id);
@@ -44,9 +44,9 @@ class KbArticleService
     }
 
     /**
-     * Erstellt einen Artikel. Nicht-Staff-Benutzer können ausschließlich Entwürfe
-     * anlegen — ein direktes Veröffentlichen am Redaktionsworkflow vorbei ist
-     * für sie nicht möglich, unabhängig davon, was im Request mitgeschickt wird.
+     * Creates an article. Non-staff users can only create drafts — a direct
+     * publish that bypasses the editorial workflow is not possible for
+     * them, regardless of what is sent in the request.
      */
     public function create(User $author, array $data): KbArticle
     {
@@ -66,14 +66,13 @@ class KbArticleService
     }
 
     /**
-     * uniqueSlug() prüft per SELECT, ob ein Slug frei ist — zwischen dieser
-     * Prüfung und dem tatsächlichen INSERT liegt ein Zeitfenster, in dem ein
-     * paralleler Request mit identischem Titel denselben Slug ebenfalls als
-     * frei ansehen könnte (klassisches TOCTOU-Problem). Der DB-seitige
-     * UNIQUE-Index auf kb_articles.slug verhindert dabei zuverlässig echte
-     * Duplikate — ohne dieses Abfangen hier würde der zweite Request aber
-     * mit einer ungefangenen 500-Antwort abbrechen, statt sauber mit einem
-     * neuen Kandidaten weiterzumachen.
+     * uniqueSlug() checks via SELECT whether a slug is free — between this
+     * check and the actual INSERT there's a time window in which a parallel
+     * request with an identical title could also see the same slug as free
+     * (a classic TOCTOU problem). The DB-side UNIQUE index on
+     * kb_articles.slug reliably prevents actual duplicates — but without
+     * catching it here, the second request would fail with an uncaught 500
+     * response instead of cleanly retrying with a new candidate.
      */
     private function createWithUniqueSlug(User $author, array $data, ArticleStatus $status, int $attempt = 0): KbArticle
     {
@@ -90,11 +89,11 @@ class KbArticleService
                 'published_at' => $status === ArticleStatus::Published ? now() : null,
             ]);
         } catch (UniqueConstraintViolationException) {
-            // kb_articles hat aktuell nur einen UNIQUE-Index (slug) — jeder
-            // hier auftretende Verstoß ist also eine Slug-Kollision durch
-            // eine parallele Anfrage. Erneut versuchen: uniqueSlug() sieht
-            // beim zweiten Durchlauf den inzwischen committeten Datensatz
-            // der anderen Anfrage und wählt automatisch einen neuen Kandidaten.
+            // kb_articles currently has only one UNIQUE index (slug) — so any
+            // violation occurring here is a slug collision caused by a
+            // parallel request. Retry: on the second pass, uniqueSlug() sees
+            // the by-then-committed record from the other request and
+            // automatically picks a new candidate.
             return $this->createWithUniqueSlug($author, $data, $status, $attempt + 1);
         }
     }
@@ -104,7 +103,7 @@ class KbArticleService
         return $this->updateWithUniqueSlug($article, $data);
     }
 
-    /** Gleiches Race-Condition-Problem wie bei create(), gleiche Lösung. */
+    /** Same race-condition problem as in create(), same solution. */
     private function updateWithUniqueSlug(KbArticle $article, array $data, int $attempt = 0): KbArticle
     {
         if ($attempt >= 5) {
@@ -137,11 +136,10 @@ class KbArticleService
     }
 
     /**
-     * Hängt eine zeitgestempelte Ergänzung an — additiv, der ursprüngliche
-     * Haupttext (body) bleibt dabei unangetastet. Für Staff und den
-     * ursprünglichen Autor gleichberechtigt nutzbar (siehe
-     * KbArticlePolicy::addAddendum()), ausschließlich bei bereits
-     * veröffentlichten oder archivierten Artikeln.
+     * Appends a timestamped addendum — additive, the original main text
+     * (body) remains untouched. Usable equally by staff and the original
+     * author (see KbArticlePolicy::addAddendum()), only for articles that
+     * are already published or archived.
      */
     public function addAddendum(KbArticle $article, User $author, string $text): KbArticle
     {
@@ -161,7 +159,7 @@ class KbArticleService
         return $article->fresh(['author', 'category', 'tags']);
     }
 
-    /** Entwurf zur redaktionellen Prüfung einreichen (nur aus dem Draft-Status) */
+    /** Submit a draft for editorial review (only from draft status) */
     public function submit(KbArticle $article): KbArticle
     {
         if ($article->status !== ArticleStatus::Draft) {
@@ -175,7 +173,7 @@ class KbArticleService
         return $article->fresh();
     }
 
-    /** Artikel veröffentlichen (aus submitted oder draft, z.B. bei Staff-Eigenautorschaft) */
+    /** Publish an article (from submitted or draft, e.g. when staff is the author) */
     public function publish(KbArticle $article): KbArticle
     {
         if (in_array($article->status, [ArticleStatus::Published, ArticleStatus::Archived], true)) {
@@ -192,7 +190,7 @@ class KbArticleService
         return $article->fresh();
     }
 
-    /** Veröffentlichten Artikel archivieren */
+    /** Archive a published article */
     public function archive(KbArticle $article): KbArticle
     {
         if ($article->status !== ArticleStatus::Published) {
@@ -206,7 +204,7 @@ class KbArticleService
         return $article->fresh();
     }
 
-    /** Slug eindeutig machen: "titel", "titel-2", "titel-3", ... */
+    /** Make the slug unique: "title", "title-2", "title-3", ... */
     private function uniqueSlug(string $title, ?int $ignoreId = null): string
     {
         $base = Str::slug($title);

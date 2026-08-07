@@ -20,7 +20,7 @@ class KbArticlePolicy
         return $article->author_id === $user->id;
     }
 
-    /** Liste selbst wird im Service gefiltert (published + eigene Artikel) */
+    /** The list itself is filtered in the service (published + own articles) */
     public function viewAny(User $user): bool
     {
         return true;
@@ -35,19 +35,19 @@ class KbArticlePolicy
         return $this->isStaff($user) || $this->isAuthor($user, $article);
     }
 
-    /** Jeder authentifizierte Benutzer darf einen Entwurf anlegen */
+    /** Any authenticated user may create a draft */
     public function create(User $user): bool
     {
         return true;
     }
 
     /**
-     * Bearbeiten: Staff jederzeit; Autor solange der Artikel noch nicht
-     * veröffentlicht ist (Entwurf ODER bereits eingereicht — vor der
-     * Veröffentlichung gibt es nichts, dessen Stabilität geschützt werden
-     * müsste, direktes Bearbeiten ist hier der einfachste Weg). Nach der
-     * Veröffentlichung greift stattdessen addAddendum() — der Haupttext
-     * bleibt dann stabil, Ergänzungen kommen additiv dazu.
+     * Edit: staff at any time; author as long as the article is not yet
+     * published (draft OR already submitted — before publication there's
+     * nothing whose stability would need protecting, direct editing is the
+     * simplest approach here). After publication, addAddendum() applies
+     * instead — the main text then stays stable, addenda are added
+     * additively.
      */
     public function update(User $user, KbArticle $article): bool
     {
@@ -59,13 +59,13 @@ class KbArticlePolicy
             && in_array($article->status, [ArticleStatus::Draft, ArticleStatus::Submitted], true);
     }
 
-    /** Zur Prüfung einreichen — nur der Autor, nur aus dem Entwurfsstatus heraus */
+    /** Submit for review — author only, only from draft status */
     public function submit(User $user, KbArticle $article): bool
     {
         return $this->isAuthor($user, $article) && $article->status === ArticleStatus::Draft;
     }
 
-    /** Veröffentlichen/Archivieren — ausschließlich Staff */
+    /** Publish/archive — staff only */
     public function publish(User $user, KbArticle $article): bool
     {
         return $this->isStaff($user);
@@ -77,12 +77,11 @@ class KbArticlePolicy
     }
 
     /**
-     * Zeitgestempelte Ergänzung anhängen — Staff und ursprünglicher Autor
-     * gleichberechtigt, aber ausschließlich bei bereits veröffentlichten
-     * oder archivierten Artikeln. Für Entwürfe/eingereichte Artikel gilt
-     * stattdessen das reguläre Bearbeitungsrecht aus update() — eine
-     * additive Ergänzung wäre dort überflüssig, da direktes Ändern noch
-     * möglich ist.
+     * Append a timestamped addendum — staff and the original author are
+     * treated equally, but only for articles that are already published or
+     * archived. For drafts/submitted articles, the regular edit right from
+     * update() applies instead — an additive addendum would be redundant
+     * there, since direct editing is still possible.
      */
     public function addAddendum(User $user, KbArticle $article): bool
     {
@@ -94,8 +93,8 @@ class KbArticlePolicy
     }
 
     /**
-     * Löschen: Admin immer; Agent nur eigene Artikel; Autor (Requester)
-     * nur den eigenen, noch unveröffentlichten Entwurf.
+     * Delete: admin always; agent only their own articles; author
+     * (requester) only their own, still-unpublished draft.
      */
     public function delete(User $user, KbArticle $article): bool
     {

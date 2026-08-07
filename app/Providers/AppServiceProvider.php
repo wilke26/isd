@@ -12,7 +12,7 @@ use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Registriert Anwendungsdienste.
+     * Register application services.
      */
     public function register(): void
     {
@@ -20,13 +20,13 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Initialisiert Anwendungsdienste.
+     * Bootstrap application services.
      */
     public function boot(): void
     {
-        // Kombiniert E-Mail und IP: verhindert sowohl viele Versuche von
-        // einer IP mit wechselnden E-Mail-Adressen als auch Credential-
-        // Stuffing derselben E-Mail-Adresse über viele verschiedene IPs.
+        // Combines email and IP: prevents both many attempts from a single
+        // IP with varying email addresses and credential stuffing of the
+        // same email address across many different IPs.
         RateLimiter::for('login', function (Request $request) {
             $key = strtolower((string) $request->input('email')) . '|' . $request->ip();
 

@@ -18,7 +18,7 @@ class TicketSeeder extends Seeder
 {
     public function run(): void
     {
-        // ─── Kategorien ────────────────────────────────────────────
+        // ─── Categories ───────────────────────────────────────────────
         $hardware = TicketCategory::firstOrCreate(['name' => 'Hardware'], ['parent_id' => null]);
         $software = TicketCategory::firstOrCreate(['name' => 'Software'], ['parent_id' => null]);
         $network = TicketCategory::firstOrCreate(['name' => 'Netzwerk'], ['parent_id' => null]);
@@ -31,7 +31,7 @@ class TicketSeeder extends Seeder
         TicketCategory::firstOrCreate(['name' => 'VPN'], ['parent_id' => $network->id]);
         TicketCategory::firstOrCreate(['name' => 'Passwort-Reset'], ['parent_id' => $account->id]);
 
-        // ─── Benutzer laden ────────────────────────────────────────
+        // ─── Load users ───────────────────────────────────────────────
         $admin = User::where('email', 'admin@isd.local')->first();
         $anna = User::where('email', 'a.mueller@isd.local')->first();
         $ben = User::where('email', 'b.schmidt@isd.local')->first();
@@ -42,7 +42,7 @@ class TicketSeeder extends Seeder
         $nb001 = Asset::where('asset_tag', 'NB-001')->first();
         $nb002 = Asset::where('asset_tag', 'NB-002')->first();
 
-        // ─── Tickets ───────────────────────────────────────────────
+        // ─── Tickets ──────────────────────────────────────────────────
         $ticket1 = Ticket::firstOrCreate(
             ['title' => 'Laptop startet nicht mehr'],
             [
@@ -58,7 +58,7 @@ class TicketSeeder extends Seeder
             ],
         );
 
-        // Kommentar und History für Ticket 1
+        // Comment and history for ticket 1
         TicketComment::firstOrCreate(
             ['ticket_id' => $ticket1->id, 'user_id' => $anna->id, 'is_internal' => false],
             ['body' => 'Ich habe das Ticket angenommen und schaue mir das Gerät heute noch an. '
@@ -97,7 +97,7 @@ class TicketSeeder extends Seeder
             ['body' => 'Das Problem tritt sowohl im Homeoffice als auch im Büronetz auf.'],
         );
 
-        // Ticket 3 — bereits gelöst
+        // Ticket 3 — already resolved
         $ticket3 = Ticket::firstOrCreate(
             ['title' => 'Passwort vergessen — Outlook'],
             [
@@ -122,7 +122,7 @@ class TicketSeeder extends Seeder
             ['user_id' => $anna->id, 'old_value' => 'open'],
         );
 
-        // Ticket 4 — offen, noch nicht zugewiesen
+        // Ticket 4 — open, not yet assigned
         Ticket::firstOrCreate(
             ['title' => 'Software-Installation: Adobe Acrobat Pro'],
             [

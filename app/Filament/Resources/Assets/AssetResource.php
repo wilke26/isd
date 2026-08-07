@@ -21,8 +21,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
- * Filament-Ressource für Assets: Formular, Detailansicht und Tabelle
- * verweisen auf die jeweils dedizierten Konfigurationsklassen im Ordner.
+ * Filament resource for assets: form, detail view and table each refer to
+ * the dedicated configuration classes in the folder.
  */
 class AssetResource extends Resource
 {
@@ -30,9 +30,9 @@ class AssetResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    // War in der --generate-Rückfrage leer geblieben (Enter übernimmt den
-    // Vorschlag dort nicht automatisch) — wirkt sich auf globale Suche und
-    // Breadcrumbs aus, daher hier nachgetragen.
+    // Was left blank in the --generate prompt (pressing Enter there doesn't
+    // adopt the suggestion automatically) — affects global search and
+    // breadcrumbs, so it's added here afterwards.
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
@@ -76,9 +76,9 @@ class AssetResource extends Resource
     }
 
     /**
-     * Policy-Query-Scoping fürs Listen-/Suchergebnis, analog zu
-     * AssetService::list(): Ein Requester sieht in der Tabelle nur die ihm
-     * aktuell zugewiesenen Assets.
+     * Policy-based query scoping for the list/search result, analogous to
+     * AssetService::list(): a requester only sees the assets currently
+     * assigned to them in the table.
      */
     public static function getEloquentQuery(): Builder
     {

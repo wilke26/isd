@@ -14,7 +14,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 /**
- * Formularfelder für Anlegen/Bearbeiten eines Tickets im Filament-Panel.
+ * Form fields for creating/editing a ticket in the Filament panel.
  */
 class TicketForm
 {
@@ -22,12 +22,12 @@ class TicketForm
     {
         return $schema
             ->components([
-                // Nur Staff darf beim Anlegen einen abweichenden Requester
-                // wählen (z.B. telefonisch gemeldetes Problem) — nicht-Staff
-                // sieht das Feld gar nicht, requester_id wird dann serverseitig
-                // im Service automatisch auf den eingeloggten Nutzer gesetzt.
-                // Nach dem Anlegen ist der Requester nicht mehr änderbar,
-                // genau wie über die API.
+                // Only staff may choose a different requester when
+                // creating a ticket (e.g. a problem reported by phone) —
+                // non-staff don't see the field at all, requester_id is
+                // then automatically set server-side in the service to the
+                // logged-in user. Once created, the requester can no
+                // longer be changed, exactly as via the API.
                 Select::make('requester_id')
                     ->label('Requester')
                     ->relationship('requester', 'name')
@@ -58,12 +58,12 @@ class TicketForm
                     ->default(TicketPriority::Medium)
                     ->required(),
                 DateTimePicker::make('due_at'),
-                // resolved_at/closed_at bewusst NICHT im Formular: Diese
-                // Zeitstempel werden ausschließlich von TicketService::update()
-                // anhand des tatsächlichen Statusübergangs gesetzt (siehe
-                // EditTicket::handleRecordUpdate()). Frei editierbar könnte
-                // hier jemand den historischen Lösungs-/Schließzeitpunkt
-                // manuell verfälschen.
+                // resolved_at/closed_at deliberately NOT in the form: these
+                // timestamps are set exclusively by TicketService::update()
+                // based on the actual status transition (see
+                // EditTicket::handleRecordUpdate()). If freely editable,
+                // someone could manually falsify the historical
+                // resolved/closed time here.
             ]);
     }
 }

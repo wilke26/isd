@@ -13,7 +13,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Formularfelder für Anlegen/Bearbeiten eines Assets im Filament-Panel.
+ * Form fields for creating/editing an asset in the Filament panel.
  */
 class AssetForm
 {
@@ -21,11 +21,11 @@ class AssetForm
     {
         return $schema
             ->components([
-                // --generate hat diese drei Relationen nicht automatisch
-                // erkannt (Fremdschlüssel heißen asset_category_id/
-                // asset_status_id statt category_id/status_id) und rohe
-                // Zahlen-Eingabefelder erzeugt — hier auf echte
-                // Beziehungs-Dropdowns umgestellt.
+                // --generate did not automatically recognize these three
+                // relations (foreign keys are named asset_category_id/
+                // asset_status_id instead of category_id/status_id) and
+                // generated raw number input fields — switched to proper
+                // relationship dropdowns here.
                 Select::make('asset_category_id')
                     ->label('Category')
                     ->relationship('category', 'name')
@@ -41,10 +41,10 @@ class AssetForm
                     ->relationship(
                         name: 'parent',
                         titleAttribute: 'name',
-                        // Ein Asset darf nicht sein eigenes übergeordnetes
-                        // Asset sein — spiegelt die entsprechende Regel aus
-                        // UpdateAssetRequest, hier bereits auf UI-Ebene
-                        // ausgeschlossen statt erst bei der Validierung.
+                        // An asset must not be its own parent asset —
+                        // mirrors the corresponding rule from
+                        // UpdateAssetRequest, excluded here already at the
+                        // UI level instead of only at validation.
                         modifyQueryUsing: fn (Builder $query, ?Asset $record) => $record
                             ? $query->whereKeyNot($record->id)
                             : $query,

@@ -14,9 +14,9 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Zentrale Definition der Workflow-Aktionen, damit sie an allen Stellen, an
- * denen sie sinnvoll erreichbar sein sollen — Tabellen-Zeile, View-Seite,
- * Edit-Seite —, exakt gleich funktionieren, statt dupliziert zu werden.
+ * Central definition of the workflow actions, so that in every place where
+ * they should sensibly be reachable — table row, view page, edit page —
+ * they work exactly the same way, instead of being duplicated.
  */
 class KbArticleWorkflowActions
 {
@@ -69,9 +69,9 @@ class KbArticleWorkflowActions
                         Notification::make()->danger()->title(collect($e->errors())->flatten()->first())->send();
                     }
                 }),
-            // Nur bei bereits veröffentlichten/archivierten Artikeln
-            // sinnvoll — vorher greift stattdessen das reguläre
-            // Bearbeitungsrecht (direktes Ändern des Haupttextes).
+            // Only makes sense for articles that are already
+            // published/archived — before that, the regular edit right
+            // (directly changing the main text) applies instead.
             Action::make('addAddendum')
                 ->label('Ergänzen')
                 ->icon(Heroicon::OutlinedPencilSquare)

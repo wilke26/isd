@@ -15,10 +15,10 @@ class TicketHistory extends Model
 {
     use HasFactory;
 
-    // Laravel würde "ticket_histories" ableiten — korrekter Name ist "ticket_history"
+    // Laravel would infer "ticket_histories" — the correct name is "ticket_history"
     protected $table = 'ticket_history';
 
-    // History-Einträge sind unveränderlich — kein updated_at
+    // History entries are immutable — no updated_at
     public const UPDATED_AT = null;
 
     protected $fillable = [

@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Redis;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Erfasst Dauer und Ergebnis jedes Requests für /metrics (Redis) und
- * optional für Loki — als terminable Middleware, siehe terminate().
+ * Records the duration and outcome of every request for /metrics (Redis)
+ * and optionally for Loki — as terminable middleware, see terminate().
  */
 class RecordRequestMetrics
 {
@@ -24,9 +24,9 @@ class RecordRequestMetrics
     }
 
     /**
-     * Läuft nach dem Versenden der Response an den Client (terminable
-     * middleware) — Metrik- und Log-Versand verzögern damit nicht die
-     * wahrgenommene Antwortzeit des Requests.
+     * Runs after the response has been sent to the client (terminable
+     * middleware) — sending metrics and logs therefore doesn't delay the
+     * perceived response time of the request.
      */
     public function terminate(Request $request, Response $response): void
     {
@@ -37,14 +37,14 @@ class RecordRequestMetrics
 
         $duration = microtime(true) - $start;
         $method = $request->method();
-        // Die Routen-URI (z.B. "api/v1/tickets/{id}") statt der konkreten URL
-        // verwenden, sonst würde jede Ticket-ID eine eigene Zeitreihe erzeugen.
+        // Use the route URI (e.g. "api/v1/tickets/{id}") instead of the
+        // concrete URL, otherwise every ticket ID would create its own time series.
         $route = $request->route()?->uri() ?? 'unmatched';
         $status = $response->getStatusCode();
         $key = "{$method}|{$route}";
 
-        // Metriken sind ein Nice-to-have — ein nicht erreichbares Redis darf
-        // niemals den eigentlichen Request zum Scheitern bringen.
+        // Metrics are a nice-to-have — an unreachable Redis must never
+        // cause the actual request to fail.
         try {
             Redis::pipeline(function ($pipe) use ($key, $status, $duration) {
                 $pipe->hincrby('metrics:http_requests_total', "{$key}|{$status}", 1);
@@ -52,14 +52,14 @@ class RecordRequestMetrics
                 $pipe->hincrby('metrics:http_request_duration_seconds_count', $key, 1);
             });
         } catch (\Throwable) {
-            // bewusst verschluckt
+            // deliberately swallowed
         }
 
-        // Der Loki-Push ist optional und standardmäßig deaktiviert (siehe
-        // LOKI_ENABLED in .env) — ohne laufenden observability-stack würde
-        // sonst jeder Request einen bis zu zwei Sekunden dauernden HTTP-
-        // Timeout-Versuch im Hintergrund auslösen (LokiHandler fängt den
-        // Fehler zwar ab, die Ressourcenbindung bleibt aber unnötig).
+        // The Loki push is optional and disabled by default (see
+        // LOKI_ENABLED in .env) — without a running observability stack,
+        // every request would otherwise trigger an up-to-two-second HTTP
+        // timeout attempt in the background (LokiHandler does catch the
+        // error, but the resource usage would still be unnecessary).
         if (config('logging.loki_enabled')) {
             Log::channel('loki')->info('http_request_completed', [
                 'request_id' => $request->attributes->get('request_id'),

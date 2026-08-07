@@ -18,7 +18,7 @@ class KbSeeder extends Seeder
         $admin = User::where('email', 'admin@isd.local')->first();
         $anna = User::where('email', 'a.mueller@isd.local')->first();
 
-        // ─── Kategorien ────────────────────────────────────────────
+        // ─── Categories ───────────────────────────────────────────────
         $hardware = KbCategory::firstOrCreate(
             ['slug' => 'hardware'],
             ['name' => 'Hardware', 'parent_id' => null],
@@ -39,14 +39,14 @@ class KbSeeder extends Seeder
             ['name' => 'Zugangsdaten & Sicherheit', 'parent_id' => null],
         );
 
-        // ─── Tags ──────────────────────────────────────────────────
+        // ─── Tags ─────────────────────────────────────────────────────
         $tagVpn = Tag::firstOrCreate(['slug' => 'vpn'], ['name' => 'VPN']);
         $tagWindows = Tag::firstOrCreate(['slug' => 'windows'], ['name' => 'Windows']);
         $tagMacos = Tag::firstOrCreate(['slug' => 'macos'], ['name' => 'macOS']);
         $tagPasswort = Tag::firstOrCreate(['slug' => 'passwort'], ['name' => 'Passwort']);
         $tagNetzwerk = Tag::firstOrCreate(['slug' => 'netzwerk'], ['name' => 'Netzwerk']);
 
-        // ─── Artikel ───────────────────────────────────────────────
+        // ─── Articles ─────────────────────────────────────────────────
         $article1 = KbArticle::firstOrCreate(
             ['slug' => 'vpn-einrichten-windows'],
             [
@@ -125,7 +125,7 @@ class KbSeeder extends Seeder
         );
         $article3->tags()->syncWithoutDetaching([$tagMacos->id, $tagWindows->id]);
 
-        // Entwurf — noch nicht veröffentlicht
+        // Draft — not yet published
         KbArticle::firstOrCreate(
             ['slug' => 'onboarding-neue-mitarbeiter'],
             [

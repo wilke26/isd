@@ -21,11 +21,11 @@ class LokiHandler extends AbstractProcessingHandler
     }
 
     /**
-     * request_id bewusst NICHT als Loki-Label, sondern als Feld im JSON-Body —
-     * Labels erzeugen bei Loki pro eindeutigem Wert eine eigene Zeitreihe,
-     * bei einer pro-Request eindeutigen ID würde das die Kardinalität
-     * unbegrenzt wachsen lassen. Als JSON-Feld ist die ID trotzdem per
-     * LogQL-`| json`-Pipeline-Stage durchsuchbar.
+     * request_id is deliberately NOT a Loki label but a field in the JSON
+     * body — in Loki, labels create a separate time series per unique
+     * value, and with an ID unique per request that would make cardinality
+     * grow without bound. As a JSON field, the ID is still searchable via
+     * the LogQL `| json` pipeline stage.
      */
     protected function write(LogRecord $record): void
     {
@@ -54,8 +54,8 @@ class LokiHandler extends AbstractProcessingHandler
                 ],
             ]);
         } catch (\Throwable) {
-            // Log-Versand darf den eigentlichen Request niemals zum Scheitern
-            // bringen — Fehler hier werden bewusst verschluckt.
+            // Sending the log must never cause the actual request to fail —
+            // errors here are deliberately swallowed.
         }
     }
 }

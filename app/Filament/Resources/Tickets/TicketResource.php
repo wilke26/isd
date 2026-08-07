@@ -21,8 +21,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Filament-Ressource für Tickets: Formular, Detailansicht und Tabelle
- * verweisen auf die jeweils dedizierten Konfigurationsklassen im Ordner.
+ * Filament resource for tickets: form, detail view and table each refer to
+ * the dedicated configuration classes in the folder.
  */
 class TicketResource extends Resource
 {
@@ -65,11 +65,11 @@ class TicketResource extends Resource
     }
 
     /**
-     * Policy-Query-Scoping fürs Listen-/Suchergebnis, analog zu
-     * TicketService::list(): Ein Requester sieht in der Tabelle nur eigene
-     * Tickets. Die Policy allein verhindert zwar das Bearbeiten/Ansehen
-     * fremder Tickets — ohne dieses Scoping würden fremde Tickets aber
-     * trotzdem in der Liste auftauchen, nur eben ohne Klickmöglichkeit.
+     * Policy-based query scoping for the list/search result, analogous to
+     * TicketService::list(): a requester only sees their own tickets in
+     * the table. The policy alone does prevent editing/viewing other
+     * users' tickets — but without this scoping, other users' tickets
+     * would still show up in the list, just without being clickable.
      */
     public static function getEloquentQuery(): Builder
     {

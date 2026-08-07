@@ -10,7 +10,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 
 /**
- * Detailansicht (Infolist) eines Assets im Filament-Panel.
+ * Detail view (infolist) of an asset in the Filament panel.
  */
 class AssetInfolist
 {
@@ -25,8 +25,8 @@ class AssetInfolist
                 TextEntry::make('status.name')
                     ->label('Status')
                     ->badge()
-                    // Siehe AssetsTable: AssetStatus ist eine DB-Tabelle mit
-                    // rohem Hex-Wert, kein Enum mit HasColor.
+                    // See AssetsTable: AssetStatus is a DB table with a raw
+                    // hex value, not an enum with HasColor.
                     ->color(fn (Asset $record) => Color::hex($record->status->color)),
                 TextEntry::make('parent.name')
                     ->label('Parent Asset')

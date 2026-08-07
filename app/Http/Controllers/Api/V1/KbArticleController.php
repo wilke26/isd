@@ -15,8 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * REST-API-Controller für Knowledge-Base-Artikel: CRUD sowie den
- * Workflow (einreichen/veröffentlichen/archivieren/ergänzen).
+ * REST API controller for knowledge base articles: CRUD as well as the
+ * workflow (submit/publish/archive/add addendum).
  */
 class KbArticleController extends Controller
 {
@@ -71,7 +71,7 @@ class KbArticleController extends Controller
         return response()->json(['message' => 'Artikel gelöscht.']);
     }
 
-    /** Entwurf zur redaktionellen Prüfung einreichen (Autor, nur aus draft) */
+    /** Submit a draft for editorial review (author, only from draft) */
     public function submit(int $id): KbArticleResource
     {
         $article = $this->kbService->findOrFail($id);
@@ -80,7 +80,7 @@ class KbArticleController extends Controller
         return new KbArticleResource($this->kbService->submit($article));
     }
 
-    /** Veröffentlichen (Staff, aus submitted/draft) */
+    /** Publish (staff, from submitted/draft) */
     public function publish(int $id): KbArticleResource
     {
         $article = $this->kbService->findOrFail($id);
@@ -89,7 +89,7 @@ class KbArticleController extends Controller
         return new KbArticleResource($this->kbService->publish($article));
     }
 
-    /** Archivieren (Staff, aus published) */
+    /** Archive (staff, from published) */
     public function archive(int $id): KbArticleResource
     {
         $article = $this->kbService->findOrFail($id);
@@ -99,9 +99,9 @@ class KbArticleController extends Controller
     }
 
     /**
-     * Zeitgestempelte Ergänzung anhängen (Staff oder ursprünglicher Autor,
-     * nur bei bereits veröffentlichten/archivierten Artikeln) — der
-     * ursprüngliche Haupttext bleibt dabei unverändert.
+     * Append a timestamped addendum (staff or original author, only for
+     * articles that are already published/archived) — the original main
+     * text remains unchanged.
      */
     public function addAddendum(AddKbArticleAddendumRequest $request, int $id): KbArticleResource
     {

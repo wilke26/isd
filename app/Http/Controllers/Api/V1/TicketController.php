@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * REST-API-Controller für Ticket-CRUD sowie Kommentare und Anhänge.
+ * REST API controller for ticket CRUD as well as comments and attachments.
  */
 class TicketController extends Controller
 {
@@ -92,7 +92,7 @@ class TicketController extends Controller
         return response()->json(['message' => 'Kommentar hinzugefügt.'], 201);
     }
 
-    /** Datei an ein Ticket anhängen (Staff oder der eigene Requester) */
+    /** Attach a file to a ticket (staff or the ticket's own requester) */
     public function storeAttachment(StoreTicketAttachmentRequest $request, int $id): JsonResponse
     {
         $ticket = $this->ticketService->findOrFail($id);
@@ -108,8 +108,8 @@ class TicketController extends Controller
     }
 
     /**
-     * Datei herunterladen — Berechtigung folgt der Sichtbarkeit des
-     * Tickets selbst (kein separates "intern"-Konzept bei Anhängen).
+     * Download a file — permission follows the visibility of the ticket
+     * itself (no separate "internal" concept for attachments).
      */
     public function downloadAttachment(int $id, int $attachmentId): StreamedResponse
     {
@@ -121,15 +121,15 @@ class TicketController extends Controller
         return Storage::disk('local')->download($attachment->path, $attachment->filename);
     }
 
-    /** Anhang löschen — Staff oder wer ihn selbst hochgeladen hat */
+    /** Delete attachment — staff or whoever uploaded it themselves */
     public function destroyAttachment(int $id, int $attachmentId): JsonResponse
     {
         $ticket = $this->ticketService->findOrFail($id);
         $attachment = TicketAttachment::where('ticket_id', $ticket->id)->findOrFail($attachmentId);
 
-        // Array-Form: das Ticket zuerst steuert die Policy-Auflösung
-        // (TicketAttachment hat keine eigene Policy-Klasse), beide Objekte
-        // werden trotzdem an die Methode durchgereicht.
+        // Array form: the ticket coming first drives the policy resolution
+        // (TicketAttachment has no policy class of its own), both objects
+        // are still passed through to the method.
         $this->authorize('deleteAttachment', [$ticket, $attachment]);
 
         $this->ticketService->deleteAttachment($attachment);

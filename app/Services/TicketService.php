@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Storage;
 class TicketService
 {
     /**
-     * Gefilterte, paginierte Ticket-Liste.
-     * Agents sehen alle Tickets, normale User nur ihre eigenen.
+     * Filtered, paginated ticket list.
+     * Agents see all tickets, normal users only their own.
      */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
@@ -51,16 +51,15 @@ class TicketService
     }
 
     /**
-     * $requester ist der ausführende/protokollierte Akteur (u.a. für die
-     * History) und standardmäßig auch der fachliche Ticket-Requester.
+     * $requester is the acting/logged actor (among other things for the
+     * history) and by default also the business-level ticket requester.
      *
-     * @param int|null $requesterId Nur von vertrauenswürdigen, internen
-     *                              Aufrufern (z.B. dem Filament-Panel für Staff) explizit gesetzt,
-     *                              um ein Ticket im Namen eines anderen Benutzers anzulegen (z.B.
-     *                              ein telefonisch gemeldetes Problem). Weicht dann vom fachlichen
-     *                              Requester ab. Die öffentliche API nutzt diesen Parameter nie —
-     *                              dort bleibt der Requester ausschließlich der authentifizierte
-     *                              Nutzer selbst, exakt wie zuvor.
+     * @param int|null $requesterId Only set explicitly by trusted, internal
+     *                              callers (e.g. the Filament panel for staff) to create a ticket on
+     *                              behalf of another user (e.g. a problem reported by phone). In that
+     *                              case it diverges from the business-level requester. The public API
+     *                              never uses this parameter — there the requester always remains the
+     *                              authenticated user themselves, exactly as before.
      */
     public function create(User $requester, array $data, ?int $requesterId = null): Ticket
     {
@@ -69,9 +68,9 @@ class TicketService
                 ...$data,
                 'requester_id' => $requesterId ?? $requester->id,
                 'status' => TicketStatus::Open,
-                // Explizit setzen statt auf den DB-Default zu vertrauen — Eloquent
-                // liest server-seitige Defaults nicht automatisch ins frische
-                // In-Memory-Objekt zurück.
+                // Set explicitly instead of relying on the DB default — Eloquent
+                // does not automatically read server-side defaults back into the
+                // fresh in-memory object.
                 'priority' => $data['priority'] ?? TicketPriority::Medium,
             ]);
 
@@ -82,31 +81,31 @@ class TicketService
     }
 
     /**
-     * @throws InvalidTicketStatusTransitionException wenn ein unzulässiger
-     *                                                Statusübergang versucht wird (z.B. open → closed direkt).
-     *                                                Gilt einheitlich für alle Rollen, auch Admins.
+     * @throws InvalidTicketStatusTransitionException if a disallowed status
+     *                                                transition is attempted (e.g. open → closed directly).
+     *                                                Applies uniformly to all roles, including admins.
      */
     public function update(Ticket $ticket, User $actor, array $data): Ticket
     {
-        // Ticket::casts() castet status/priority als echte BackedEnum-
-        // Instanzen. Unsere API liefert über JSON immer rohe Strings, aber
-        // Filaments Formular-Felder (siehe TicketForm) arbeiten direkt mit
-        // dem bereits gecasteten Attributwert und übergeben daher fertige
-        // Enum-Instanzen statt Strings. Hier einmalig auf rohe Werte
-        // normalisieren, damit der Rest der Methode unabhängig vom
-        // Aufrufer (API oder Filament) einheitlich arbeiten kann.
+        // Ticket::casts() casts status/priority as real BackedEnum instances.
+        // Our API always delivers raw strings via JSON, but Filament's form
+        // fields (see TicketForm) work directly with the already-cast
+        // attribute value and therefore pass finished enum instances instead
+        // of strings. Normalize to raw values here once, so the rest of the
+        // method can work uniformly regardless of the caller (API or
+        // Filament).
         $data = array_map(
             fn ($value) => $value instanceof \BackedEnum ? $value->value : $value,
             $data,
         );
 
         return DB::transaction(function () use ($ticket, $actor, $data) {
-            // Sperrt die Ticket-Zeile für die Dauer der Transaktion und liest
-            // den garantiert aktuellen Stand. Ohne das könnten zwei parallele
-            // Requests denselben (potenziell veralteten) Ausgangsstatus vom
-            // übergebenen $ticket-Objekt sehen, beide einen für sich gültigen
-            // Übergang prüfen und anschließend widersprüchliche Änderungen
-            // mit falscher Historie schreiben — analog zu AssetService::assign().
+            // Locks the ticket row for the duration of the transaction and
+            // reads the guaranteed-current state. Without this, two parallel
+            // requests could see the same (potentially stale) starting status
+            // from the passed-in $ticket object, each validate a transition
+            // that's individually valid, and then write conflicting changes
+            // with an incorrect history — analogous to AssetService::assign().
             $lockedTicket = Ticket::whereKey($ticket->id)->lockForUpdate()->firstOrFail();
 
             if (isset($data['status'])) {
@@ -123,10 +122,10 @@ class TicketService
             $statusActuallyChanged = false;
 
             foreach (['status', 'priority', 'assignee_id'] as $field) {
-                // array_key_exists statt isset: assignee_id ist nullable —
-                // ein explizites "assignee_id": null (Zuweisung aufheben)
-                // würde von isset() fälschlich als "nicht mitgeschickt"
-                // behandelt und damit weder erkannt noch protokolliert.
+                // array_key_exists instead of isset: assignee_id is nullable —
+                // an explicit "assignee_id": null (clearing the assignment)
+                // would be incorrectly treated by isset() as "not sent" and
+                // thus neither detected nor logged.
                 if (! array_key_exists($field, $data)) {
                     continue;
                 }
@@ -148,11 +147,10 @@ class TicketService
                 }
             }
 
-            // Resolved-/Closed-Zeitstempel nur pflegen, wenn sich der Status
-            // tatsächlich geändert hat. Andernfalls würde ein wiederholtes
-            // Mitschicken desselben Status (z.B. zusammen mit einer reinen
-            // Prioritäts- oder Zuweisungsänderung) den Lösungs- bzw.
-            // Schließzeitpunkt fälschlich auf "jetzt" zurücksetzen.
+            // Only maintain the resolved/closed timestamps if the status
+            // actually changed. Otherwise, repeatedly sending the same status
+            // (e.g. together with a pure priority or assignment change) would
+            // incorrectly reset the resolved/closed time to "now".
             if ($statusActuallyChanged && isset($data['status'])) {
                 $status = TicketStatus::from($data['status']);
 
@@ -179,10 +177,10 @@ class TicketService
                 'is_internal' => $isInternal,
             ]);
 
-            // Automatischer Statuswechsel: Antwortet der Requester öffentlich auf
-            // ein Ticket, das auf seine Rückmeldung wartet, springt es automatisch
-            // zurück auf "in_progress" — der Agent muss wieder aktiv werden.
-            // Interne Kommentare lösen bewusst keinen Statuswechsel aus.
+            // Automatic status change: if the requester publicly replies to a
+            // ticket that's waiting for their response, it automatically jumps
+            // back to "in_progress" — the agent needs to become active again.
+            // Internal comments deliberately do not trigger a status change.
             if (
                 ! $isInternal
                 && $ticket->requester_id === $author->id
@@ -202,10 +200,10 @@ class TicketService
     }
 
     /**
-     * Speichert einen Anhang auf der privaten Storage-Disk unter einem
-     * zufälligen Dateinamen (nie den vom Client mitgeschickten Namen als
-     * Pfad verwenden — Path-Traversal-Risiko). Der ursprüngliche Dateiname
-     * bleibt für die Anzeige separat in der DB erhalten.
+     * Stores an attachment on the private storage disk under a random
+     * filename (never use the name sent by the client as the path — path
+     * traversal risk). The original filename is kept separately in the DB
+     * for display purposes.
      */
     public function addAttachment(Ticket $ticket, User $uploader, UploadedFile $file): TicketAttachment
     {
@@ -221,7 +219,7 @@ class TicketService
         ]);
     }
 
-    /** Entfernt sowohl die Datei von der Disk als auch den DB-Datensatz. */
+    /** Removes both the file from disk and the DB record. */
     public function deleteAttachment(TicketAttachment $attachment): void
     {
         Storage::disk('local')->delete($attachment->path);

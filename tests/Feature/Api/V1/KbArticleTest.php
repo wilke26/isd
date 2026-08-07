@@ -190,9 +190,9 @@ class KbArticleTest extends TestCase
 
     public function test_duplicate_slug_insert_throws_unique_constraint_violation(): void
     {
-        // Validiert die Annahme, auf der KbArticleService::createWithUniqueSlug()
-        // basiert: Ein Verstoß gegen den UNIQUE-Index auf slug muss exakt diese
-        // Exception werfen, damit der Retry-Mechanismus sie zuverlässig abfängt.
+        // Validates the assumption that KbArticleService::createWithUniqueSlug()
+        // relies on: a violation of the UNIQUE index on slug must throw
+        // exactly this exception, so the retry mechanism reliably catches it.
         KbArticle::factory()->create(['slug' => 'mein-slug']);
 
         $this->expectException(UniqueConstraintViolationException::class);
@@ -219,9 +219,9 @@ class KbArticleTest extends TestCase
 
     public function test_author_cannot_update_own_published_article(): void
     {
-        // Bewusst ein Requester (nicht Staff) als Autor — Staff hat laut
-        // Policy jederzeit Bearbeitungsrecht, unabhängig vom Status. Nur ein
-        // nicht-Staff-Autor verliert es nach der Veröffentlichung.
+        // Deliberately a requester (not staff) as author — per the policy,
+        // staff have edit rights at all times, regardless of status. Only a
+        // non-staff author loses it after publication.
         $author = $this->createUser();
         $article = KbArticle::factory()->create([
             'author_id' => $author->id,

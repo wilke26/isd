@@ -14,7 +14,7 @@ class AssetPolicy
         return $user->hasRole('admin') || $user->hasRole('agent');
     }
 
-    /** Liste selbst wird im Service gefiltert (Requester sieht nur zugewiesene Assets) */
+    /** The list itself is filtered in the service (requester sees only assigned assets) */
     public function viewAny(User $user): bool
     {
         return true;
@@ -32,43 +32,43 @@ class AssetPolicy
             ->exists();
     }
 
-    /** Anlegen — nur Admin/Agent */
+    /** Create — admin/agent only */
     public function create(User $user): bool
     {
         return $this->isStaff($user);
     }
 
-    /** Bearbeiten — nur Admin/Agent, nicht der Requester, dem es zugewiesen ist */
+    /** Edit — admin/agent only, not the requester it's assigned to */
     public function update(User $user, Asset $asset): bool
     {
         return $this->isStaff($user);
     }
 
-    /** Zuweisen und Freigeben (dieselbe Ability, siehe AssetController::unassign()) */
+    /** Assign and release (same ability, see AssetController::unassign()) */
     public function assign(User $user, Asset $asset): bool
     {
         return $this->isStaff($user);
     }
 
-    /** Löschen — ausschließlich Admin, nicht Agent */
+    /** Delete — admin only, not agent */
     public function delete(User $user, Asset $asset): bool
     {
         return $user->hasRole('admin');
     }
 
     /**
-     * Die Zuweisungshistorie zeigt auch frühere Besitzer namentlich — das ist
-     * strenger als der reine "view"-Check auf das aktuell zugewiesene Asset.
-     * Ein Requester, dem das Asset gerade zugewiesen ist, darf es zwar
-     * ansehen, aber nicht erfahren, wer es vorher hatte. Eigene Ability
-     * statt Wiederverwendung von 'view'.
+     * The assignment history also shows previous owners by name — this is
+     * stricter than the plain "view" check on the currently assigned asset.
+     * A requester the asset is currently assigned to may view it, but may
+     * not find out who had it before. Own ability instead of reusing
+     * 'view'.
      */
     public function viewHistory(User $user, Asset $asset): bool
     {
         return $this->isStaff($user);
     }
 
-    /** Kategorien/Statuswerte verwalten — ausschließlich Admin */
+    /** Manage categories/status values — admin only */
     public function manageCategories(User $user): bool
     {
         return $user->hasRole('admin');

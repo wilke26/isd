@@ -21,8 +21,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
- * Konfiguriert das Filament-Admin-Panel unter /app (Ressourcen, Farben,
- * Middleware-Stack).
+ * Configures the Filament admin panel under /app (resources, colors,
+ * middleware stack).
  */
 class AppPanelProvider extends PanelProvider
 {
@@ -35,14 +35,14 @@ class AppPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => Color::Amber,
-                // Zusätzlich unter ihrem eigenen Namen registriert, damit
-                // TicketStatus::getColor()/TicketPriority::getColor() (die
-                // dieselben Farbnamen wiederverwenden, die im Rest des
-                // Projekts für Status-/Prioritäts-Badges gelten) von
-                // Filament tatsächlich aufgelöst werden — ohne explizite
-                // Registrierung kennt Filament nur seine eingebauten
-                // Aliase (danger/gray/info/primary/success/warning) und
-                // fällt sonst auf ungestylte Badges zurück.
+                // Also registered under their own names so that
+                // TicketStatus::getColor()/TicketPriority::getColor()
+                // (which reuse the same color names used for status/
+                // priority badges throughout the rest of the project) are
+                // actually resolved by Filament — without explicit
+                // registration Filament only knows its built-in aliases
+                // (danger/gray/info/primary/success/warning) and would
+                // otherwise fall back to unstyled badges.
                 'blue' => Color::Blue,
                 'amber' => Color::Amber,
                 'purple' => Color::Purple,

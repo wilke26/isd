@@ -11,11 +11,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Schema-Builder statt rohem SQL: Laravel übersetzt ->change() seit
-        // Version 11 nativ (ohne doctrine/dbal) sowohl für MySQL als auch für
-        // SQLite (dort per Tabellen-Neuaufbau) — funktioniert damit korrekt
-        // sowohl in der echten Dev-Datenbank als auch in der SQLite-In-Memory-
-        // Testdatenbank aus phpunit.xml.
+        // Schema builder instead of raw SQL: since version 11, Laravel
+        // translates ->change() natively (without doctrine/dbal) for both
+        // MySQL and SQLite (there via table rebuild) — so it works
+        // correctly both in the real dev database and in the SQLite
+        // in-memory test database from phpunit.xml.
         Schema::table('kb_articles', function (Blueprint $table) {
             $table->enum('status', ['draft', 'submitted', 'published', 'archived'])
                 ->default('draft')
@@ -25,8 +25,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Vor dem Zurückrollen bestehende 'submitted'-Artikel auf 'draft'
-        // zurücksetzen, da der alte Enum-Typ diesen Wert nicht mehr kennt.
+        // Before rolling back, reset existing 'submitted' articles to
+        // 'draft', since the old enum type no longer knows this value.
         DB::table('kb_articles')->where('status', 'submitted')->update(['status' => 'draft']);
 
         Schema::table('kb_articles', function (Blueprint $table) {

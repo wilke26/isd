@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->text('body');
-            // Interne Notizen sind nur für Agents sichtbar, nicht für den Requester
+            // Internal notes are only visible to agents, not to the requester
             $table->boolean('is_internal')->default(false);
             $table->timestamps();
 

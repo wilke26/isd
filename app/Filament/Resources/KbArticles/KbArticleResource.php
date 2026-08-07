@@ -22,9 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
- * Filament-Ressource für Knowledge-Base-Artikel: Formular, Detailansicht
- * und Tabelle verweisen auf die jeweils dedizierten Konfigurationsklassen
- * im Ordner.
+ * Filament resource for knowledge base articles: form, detail view and
+ * table each refer to the dedicated configuration classes in the folder.
  */
 class KbArticleResource extends Resource
 {
@@ -75,10 +74,10 @@ class KbArticleResource extends Resource
     }
 
     /**
-     * Policy-Query-Scoping fürs Listen-/Suchergebnis, analog zu
-     * KbArticleService::list(): Staff sieht alles, ein Requester sieht
-     * veröffentlichte Artikel sowie ausschließlich die eigenen (unabhängig
-     * vom Status).
+     * Policy-based query scoping for the list/search result, analogous to
+     * KbArticleService::list(): staff see everything, a requester sees
+     * published articles as well as exclusively their own (regardless of
+     * status).
      */
     public static function getEloquentQuery(): Builder
     {

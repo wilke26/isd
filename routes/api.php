@@ -43,7 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('assets/{id}/assign', [AssetController::class, 'unassign']);
         Route::get('assets/{id}/history', [AssetController::class, 'history']);
 
-        // Wissensdatenbank
+        // Knowledge Base
         Route::get('kb/articles', [KbArticleController::class, 'index']);
         Route::post('kb/articles', [KbArticleController::class, 'store']);
         Route::get('kb/articles/{id}', [KbArticleController::class, 'show']);

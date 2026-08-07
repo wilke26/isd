@@ -41,7 +41,7 @@ class UserSeeder extends Seeder
             $agent->roles()->syncWithoutDetaching([$agentRole->id]);
         }
 
-        // Normale Benutzer
+        // Normal users
         $users = [
             ['name' => 'Clara Weber',   'email' => 'c.weber@isd.local'],
             ['name' => 'David Bauer',   'email' => 'd.bauer@isd.local'],

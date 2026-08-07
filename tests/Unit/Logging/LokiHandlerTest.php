@@ -32,12 +32,12 @@ class LokiHandlerTest extends TestCase
 
     public function test_loki_push_failure_does_not_throw(): void
     {
-        // Simuliert ein nicht erreichbares Loki — der Log-Aufruf selbst darf
-        // dabei niemals eine Exception werfen.
+        // Simulates an unreachable Loki — the log call itself must never
+        // throw an exception because of this.
         Http::fake(fn () => throw new \RuntimeException('Connection refused'));
 
         Log::channel('loki')->info('test_event');
 
-        $this->assertTrue(true); // Kein Exception-Abbruch bis hierhin = bestanden
+        $this->assertTrue(true); // No exception thrown up to here = passed
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Repräsentiert ein Ticket im System.
+ * Represents a ticket in the system.
  *
  * @mixin IdeHelperTicket
  */
@@ -23,7 +23,7 @@ class Ticket extends Model
     use SoftDeletes;
 
     /**
-     * Die Attribute, die massenzuweisbar sind.
+     * The attributes that are mass assignable.
      *
      * @var list<string>
      */
@@ -42,7 +42,7 @@ class Ticket extends Model
     ];
 
     /**
-     * Die Attribute, die konvertiert werden sollen.
+     * Get the attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -58,7 +58,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt den Benutzer zurück, der das Ticket erstellt hat.
+     * Returns the user who created the ticket.
      */
     public function requester(): BelongsTo
     {
@@ -66,7 +66,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt den Benutzer zurück, dem das Ticket zugewiesen ist.
+     * Returns the user the ticket is assigned to.
      */
     public function assignee(): BelongsTo
     {
@@ -74,7 +74,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt das Asset zurück, das mit dem Ticket verknüpft ist.
+     * Returns the asset linked to the ticket.
      */
     public function asset(): BelongsTo
     {
@@ -82,7 +82,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt die Kategorie des Tickets zurück.
+     * Returns the ticket's category.
      */
     public function category(): BelongsTo
     {
@@ -90,7 +90,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt alle Kommentare zum Ticket zurück.
+     * Returns all comments on the ticket.
      */
     public function comments(): HasMany
     {
@@ -98,7 +98,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt nur die öffentlichen Kommentare zum Ticket zurück.
+     * Returns only the public comments on the ticket.
      */
     public function publicComments(): HasMany
     {
@@ -106,7 +106,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt alle Anhänge des Tickets zurück.
+     * Returns all attachments on the ticket.
      */
     public function attachments(): HasMany
     {
@@ -114,7 +114,7 @@ class Ticket extends Model
     }
 
     /**
-     * Gibt die Historie der Änderungen am Ticket zurück.
+     * Returns the history of changes made to the ticket.
      */
     public function history(): HasMany
     {
@@ -122,7 +122,7 @@ class Ticket extends Model
     }
 
     /**
-     * Prüft, ob das Ticket offen ist.
+     * Checks whether the ticket is open.
      */
     public function isOpen(): bool
     {
@@ -130,7 +130,7 @@ class Ticket extends Model
     }
 
     /**
-     * Prüft, ob das Ticket geschlossen ist.
+     * Checks whether the ticket is closed.
      */
     public function isClosed(): bool
     {

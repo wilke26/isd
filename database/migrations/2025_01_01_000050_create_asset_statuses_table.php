@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('asset_statuses', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
-            // HEX-Farbcode für UI-Darstellung, z.B. #22c55e
+            // Hex color code for UI display, e.g. #22c55e
             $table->string('color', 7)->default('#6b7280');
             $table->timestamps();
         });

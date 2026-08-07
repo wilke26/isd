@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('license_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('license_id')->constrained()->cascadeOnDelete();
-            // Lizenz kann einem User ODER einem Asset zugewiesen sein (oder beiden)
+            // A license can be assigned to a user OR an asset (or both)
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('asset_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamp('assigned_at')->useCurrent();

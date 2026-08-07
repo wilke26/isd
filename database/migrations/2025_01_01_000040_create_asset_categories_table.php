@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('asset_categories', function (Blueprint $table) {
             $table->id();
-            // Selbstreferenz: nullable, da Root-Kategorien kein parent haben
+            // Self-reference: nullable, since root categories have no parent
             $table->foreignId('parent_id')->nullable()->constrained('asset_categories')->nullOnDelete();
             $table->string('name', 100);
             $table->timestamps();

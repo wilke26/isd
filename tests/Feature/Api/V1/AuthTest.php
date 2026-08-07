@@ -94,8 +94,8 @@ class AuthTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('test-token')->plainTextToken;
 
-        // Liegt weiter in der Vergangenheit als die konfigurierte Ablaufzeit
-        // (SANCTUM_TOKEN_EXPIRATION, aktuell 4320 Minuten = 3 Tage).
+        // Further in the past than the configured expiration
+        // (SANCTUM_TOKEN_EXPIRATION, currently 4320 minutes = 3 days).
         $this->travel(4321)->minutes();
 
         $response = $this->getJson('/api/v1/auth/me', [

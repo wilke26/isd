@@ -211,8 +211,8 @@ class TicketTest extends TestCase
         $this->actingAsAgent();
         $ticket = Ticket::factory()->open()->create();
 
-        // 'closed' ist ein gültiger Enum-Wert, aber open → closed ist laut
-        // Übergangsmatrix nicht erlaubt — muss als 409 Conflict abgelehnt werden.
+        // 'closed' is a valid enum value, but per the transition matrix,
+        // open → closed is not allowed — must be rejected as a 409 Conflict.
         $this->patchJson("/api/v1/tickets/{$ticket->id}", ['status' => 'closed'])
             ->assertStatus(409);
 
@@ -221,8 +221,8 @@ class TicketTest extends TestCase
 
     public function test_admin_is_also_bound_by_transition_matrix(): void
     {
-        // Bewusst keine Sonderrolle für Admins — sonst existieren zwei
-        // Geschäftsregeln parallel.
+        // Deliberately no special role for admins — otherwise two sets of
+        // business rules would exist in parallel.
         $this->actingAsAdmin();
         $ticket = Ticket::factory()->create(['status' => TicketStatus::Closed]);
 
@@ -255,7 +255,7 @@ class TicketTest extends TestCase
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'in_progress']);
     }
 
-    // ─── Kommentare ───────────────────────────────────────────────
+    // ─── Comments ───────────────────────────────────────────────────
 
     public function test_user_can_add_public_comment_to_own_ticket(): void
     {

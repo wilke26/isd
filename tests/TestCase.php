@@ -14,7 +14,7 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
-    // ─── Hilfsmethoden für Benutzer mit Rollen ────────────────────
+    // ─── Helper methods for users with roles ───────────────────────
 
     protected function createAdmin(): User
     {

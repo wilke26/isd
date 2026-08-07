@@ -10,12 +10,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redis;
 
 /**
- * Controller für die Bereitstellung von Prometheus-Metriken.
+ * Controller for exposing Prometheus metrics.
  */
 class MetricsController extends Controller
 {
     /**
-     * Sammelt alle Metriken und gibt sie im Plain-Text-Format zurück.
+     * Collects all metrics and returns them in plain-text format.
      */
     public function __invoke(): Response
     {
@@ -74,8 +74,8 @@ class MetricsController extends Controller
                 );
             }
         } catch (\Throwable) {
-            // Redis nicht erreichbar — Zähler auslassen statt /metrics
-            // komplett scheitern zu lassen.
+            // Redis unreachable — omit the counters instead of letting
+            // /metrics fail entirely.
         }
 
         return $lines;

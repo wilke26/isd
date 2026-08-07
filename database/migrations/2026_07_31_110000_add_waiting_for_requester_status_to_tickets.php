@@ -20,8 +20,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Vor dem Zurückrollen bestehende 'waiting_for_requester'-Tickets auf
-        // 'in_progress' zurücksetzen, da der alte Enum-Typ den Wert nicht kennt.
+        // Before rolling back, reset existing 'waiting_for_requester'
+        // tickets to 'in_progress', since the old enum type doesn't know
+        // this value.
         DB::table('tickets')->where('status', 'waiting_for_requester')->update(['status' => 'in_progress']);
 
         Schema::table('tickets', function (Blueprint $table) {

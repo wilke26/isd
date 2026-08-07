@@ -10,8 +10,8 @@ class AddKbArticleAddendumRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Autorisierung läuft explizit im Controller über die Policy
-        // (addAddendum), nicht hier — konsistent mit dem übrigen Projekt.
+        // Authorization runs explicitly in the controller via the policy
+        // (addAddendum), not here — consistent with the rest of the project.
         return true;
     }
 

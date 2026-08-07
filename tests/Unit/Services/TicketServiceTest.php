@@ -85,8 +85,8 @@ class TicketServiceTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->resolved()->create();
 
-        // Wiedereröffnung läuft laut Übergangsmatrix über "in_progress",
-        // nicht direkt zurück auf "open".
+        // Per the transition matrix, reopening goes through "in_progress",
+        // not directly back to "open".
         $updated = $this->service->update($ticket, $user, ['status' => 'in_progress']);
 
         $this->assertNull($updated->resolved_at);
@@ -106,10 +106,9 @@ class TicketServiceTest extends TestCase
     }
 
     /**
-     * Regression: Ein wiederholtes Mitschicken desselben Status (z.B.
-     * zusammen mit einer Prioritätsänderung) darf resolved_at NICHT erneut
-     * auf "jetzt" setzen — das würde den echten historischen Lösungs-
-     * zeitpunkt verfälschen.
+     * Regression: repeatedly sending the same status (e.g. together with a
+     * priority change) must NOT reset resolved_at to "now" again — that
+     * would falsify the real historical resolution time.
      */
     public function test_resending_same_status_does_not_reset_resolved_at(): void
     {
@@ -168,9 +167,9 @@ class TicketServiceTest extends TestCase
     }
 
     /**
-     * Regression: assignee_id ist nullable — isset() behandelt einen
-     * expliziten null-Wert fälschlich als "nicht mitgeschickt". Eine
-     * Zuweisungsaufhebung muss trotzdem im Audit Trail erscheinen.
+     * Regression: assignee_id is nullable — isset() incorrectly treats an
+     * explicit null value as "not sent". Clearing an assignment must still
+     * show up in the audit trail.
      */
     public function test_unassigning_ticket_records_history(): void
     {
@@ -218,7 +217,7 @@ class TicketServiceTest extends TestCase
         $this->assertEquals($before, $ticket->fresh()->history()->count());
     }
 
-    // ─── Übergangsmatrix ────────────────────────────────────────────
+    // ─── Transition matrix ──────────────────────────────────────────
 
     public function test_update_throws_exception_for_invalid_transition(): void
     {
@@ -238,7 +237,7 @@ class TicketServiceTest extends TestCase
         try {
             $this->service->update($ticket, $user, ['status' => 'closed']);
         } catch (InvalidTicketStatusTransitionException) {
-            // erwartet
+            // expected
         }
 
         $this->assertEquals(TicketStatus::Open, $ticket->fresh()->status);
@@ -275,8 +274,8 @@ class TicketServiceTest extends TestCase
 
     public function test_agent_public_comment_does_not_trigger_status_change(): void
     {
-        // Nur der Requester selbst löst den automatischen Übergang aus —
-        // ein Agent-Kommentar auf einem fremden Ticket tut das nicht.
+        // Only the requester themselves triggers the automatic transition —
+        // an agent comment on someone else's ticket does not.
         $agent = User::factory()->create();
         $ticket = Ticket::factory()->create(['status' => TicketStatus::WaitingForRequester]);
 

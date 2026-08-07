@@ -12,13 +12,13 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Service-Klasse für die Verwaltung von Assets.
+ * Service class for managing assets.
  */
 class AssetService
 {
     /**
-     * Gibt eine gefilterte und paginierte Liste von Assets zurück.
-     * Administratoren und Agents sehen alle Assets, andere Benutzer nur die ihnen zugewiesenen.
+     * Returns a filtered and paginated list of assets.
+     * Admins and agents see all assets, other users only the ones assigned to them.
      */
     public function list(User $user, array $filters = []): LengthAwarePaginator
     {
@@ -26,7 +26,7 @@ class AssetService
 
         return Asset::with(['category', 'status', 'currentAssignment.user'])
             ->when(! $isStaff, function ($q) use ($user) {
-                // Requester sieht nur die ihm aktuell zugewiesenen Assets
+                // A requester only sees the assets currently assigned to them
                 $q->whereHas('assignments', function ($q2) use ($user) {
                     $q2->where('user_id', $user->id)->whereNull('returned_at');
                 });
@@ -43,8 +43,8 @@ class AssetService
     }
 
     /**
-     * Findet ein Asset anhand seiner ID oder wirft eine Exception.
-     * Lädt alle relevanten Beziehungen für die Detailansicht.
+     * Finds an asset by its ID or throws an exception.
+     * Loads all relevant relations for the detail view.
      */
     public function findOrFail(int $id): Asset
     {
@@ -53,17 +53,18 @@ class AssetService
             'status',
             'parent',
             'children',
-            // "currentAssignment.user" statt "assignments.user" — konsistent
-            // mit der Listen-Query oben und mit dem, was AssetResource
-            // tatsächlich verwendet (current_assignment fehlte zuvor auf
-            // dieser Route, weil hier die falsche Relation geladen wurde).
+            // "currentAssignment.user" instead of "assignments.user" —
+            // consistent with the list query above and with what
+            // AssetResource actually uses (current_assignment was previously
+            // missing on this route because the wrong relation was loaded
+            // here).
             'currentAssignment.user',
             'licenseAssignments.license',
         ])->findOrFail($id);
     }
 
     /**
-     * Erstellt ein neues Asset.
+     * Creates a new asset.
      */
     public function create(array $data): Asset
     {
@@ -71,7 +72,7 @@ class AssetService
     }
 
     /**
-     * Aktualisiert ein bestehendes Asset.
+     * Updates an existing asset.
      */
     public function update(Asset $asset, array $data): Asset
     {
@@ -81,7 +82,7 @@ class AssetService
     }
 
     /**
-     * Löscht ein Asset (Soft-Delete).
+     * Deletes an asset (soft delete).
      */
     public function delete(Asset $asset): void
     {
@@ -89,9 +90,9 @@ class AssetService
     }
 
     /**
-     * Weist ein Asset einem Benutzer zu. Das Asset wird für die Dauer der
-     * Transaktion gesperrt (lockForUpdate), damit zwei parallele Zuweisungen
-     * nicht beide als "aktiv" enden können.
+     * Assigns an asset to a user. The asset is locked (lockForUpdate) for
+     * the duration of the transaction, so that two parallel assignments
+     * can't both end up "active".
      */
     public function assign(Asset $asset, User $user): AssetAssignment
     {
@@ -111,7 +112,7 @@ class AssetService
     }
 
     /**
-     * Nimmt die Zuweisung eines Assets zurück (Asset wird zurückgegeben).
+     * Reverses the assignment of an asset (asset is returned).
      */
     public function unassign(Asset $asset): void
     {
@@ -125,7 +126,7 @@ class AssetService
     }
 
     /**
-     * Gibt die vollständige Zuweisungshistorie eines Assets zurück.
+     * Returns the complete assignment history of an asset.
      *
      * @return Collection<int, AssetAssignment>
      */

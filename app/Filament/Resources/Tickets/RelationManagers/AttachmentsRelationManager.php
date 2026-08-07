@@ -20,9 +20,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Anhänge-Tab auf der Ticket-Detailseite im Filament-Panel: Upload,
- * Download und Löschen laufen über TicketService, nicht über Filaments
- * Standard-CRUD, damit dieselbe Logik wie in der REST-API gilt.
+ * Attachments tab on the ticket detail page in the Filament panel: upload,
+ * download and delete go through TicketService, not through Filament's
+ * standard CRUD, so the same logic applies as in the REST API.
  */
 class AttachmentsRelationManager extends RelationManager
 {
@@ -30,11 +30,11 @@ class AttachmentsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        // Wird nur für Filaments interne Formular-Validierung benötigt,
-        // der tatsächliche Upload läuft über die eigene Action unten
-        // (siehe headerActions), nicht über Filaments Standard-CreateAction
-        // — damit TicketService::addAttachment() genutzt wird, statt
-        // roher Eloquent-create()-Logik.
+        // Only needed for Filament's internal form validation, the actual
+        // upload goes through the custom action below (see headerActions),
+        // not through Filament's standard CreateAction — so that
+        // TicketService::addAttachment() is used instead of raw Eloquent
+        // create() logic.
         return $schema->components([]);
     }
 
@@ -61,11 +61,11 @@ class AttachmentsRelationManager extends RelationManager
                     ->schema([
                         FileUpload::make('file')
                             ->label('Datei')
-                            // Nur temporär während des Uploads — der
-                            // eigentliche, dauerhafte Speicherort wird von
-                            // TicketService::addAttachment() bestimmt, das
-                            // die Datei erneut (unter einem zufälligen
-                            // Namen, nicht dem Original) ablegt.
+                            // Only temporary during the upload — the actual,
+                            // permanent storage location is determined by
+                            // TicketService::addAttachment(), which stores
+                            // the file again (under a random name, not the
+                            // original).
                             ->disk('local')
                             ->directory('ticket-attachments-tmp')
                             ->required(),
@@ -82,9 +82,9 @@ class AttachmentsRelationManager extends RelationManager
                             true,
                         );
 
-                        // getOwnerRecord() ist generisch mit der Basisklasse
-                        // Model typisiert; dieser RelationManager ist aber
-                        // ausschließlich an die Ticket-Resource gebunden.
+                        // getOwnerRecord() is generically typed with the
+                        // base Model class; but this RelationManager is
+                        // bound exclusively to the Ticket resource.
                         $ticket = $this->getOwnerRecord();
                         assert($ticket instanceof Ticket);
 

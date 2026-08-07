@@ -10,8 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 /**
- * Formularfelder für Anlegen/Bearbeiten eines KB-Artikels im
- * Filament-Panel.
+ * Form fields for creating/editing a KB article in the Filament panel.
  */
 class KbArticleForm
 {
@@ -19,11 +18,11 @@ class KbArticleForm
     {
         return $schema
             ->components([
-                // author_id absichtlich kein Formularfeld: CreateKbArticle
-                // setzt den Autor immer fest auf den eingeloggten Nutzer
-                // (KbArticleService::create() erwartet ihn separat, nicht
-                // aus $data) — die API kennt ebenfalls keine Möglichkeit,
-                // einen abweichenden Autor zu wählen.
+                // author_id deliberately not a form field: CreateKbArticle
+                // always fixes the author to the logged-in user
+                // (KbArticleService::create() expects it separately, not
+                // from $data) — the API likewise has no way to choose a
+                // different author.
                 Select::make('category_id')
                     ->label('Category')
                     ->relationship('category', 'name')
@@ -38,16 +37,16 @@ class KbArticleForm
                 Textarea::make('body')
                     ->required()
                     ->columnSpanFull(),
-                // slug/status/published_at bewusst NICHT im Formular:
-                // - slug wird von KbArticleService automatisch generiert
-                //   (inkl. der Race-Condition-sicheren Retry-Logik gegen
-                //   Slug-Kollisionen) — ein freies Textfeld würde das
-                //   komplett umgehen
-                // - status wechselt ausschließlich über die dedizierten
-                //   Aktionen "Einreichen"/"Veröffentlichen"/"Archivieren",
-                //   die auf submit()/publish()/archive() umleiten — ein
-                //   generisches Dropdown würde deren Bedingungen umgehen
-                // - published_at wird von publish() gesetzt, nicht manuell
+                // slug/status/published_at deliberately NOT in the form:
+                // - slug is generated automatically by KbArticleService
+                //   (including the race-condition-safe retry logic against
+                //   slug collisions) — a free text field would bypass that
+                //   entirely
+                // - status changes exclusively via the dedicated
+                //   "Einreichen"/"Veröffentlichen"/"Archivieren" actions,
+                //   which route to submit()/publish()/archive() — a
+                //   generic dropdown would bypass their conditions
+                // - published_at is set by publish(), not manually
             ]);
     }
 }

@@ -121,7 +121,7 @@ class AssetTest extends TestCase
             ->assertJsonStructure(['data' => ['id', 'asset_tag', 'name', 'category', 'status', 'parent']]);
     }
 
-    // ─── Zuweisung ────────────────────────────────────────────────
+    // ─── Assignment ───────────────────────────────────────────────
 
     public function test_admin_can_assign_asset_to_user(): void
     {
@@ -147,20 +147,20 @@ class AssetTest extends TestCase
         $userOne = User::factory()->create();
         $userTwo = User::factory()->create();
 
-        // Erste Zuweisung
+        // First assignment
         $this->postJson("/api/v1/assets/{$asset->id}/assign", ['user_id' => $userOne->id]);
 
-        // Zweite Zuweisung
+        // Second assignment
         $this->postJson("/api/v1/assets/{$asset->id}/assign", ['user_id' => $userTwo->id]);
 
-        // Alte Zuweisung muss returned_at haben
+        // Old assignment must have returned_at
         $this->assertDatabaseMissing('asset_assignments', [
             'asset_id' => $asset->id,
             'user_id' => $userOne->id,
             'returned_at' => null,
         ]);
 
-        // Neue Zuweisung ist aktiv
+        // New assignment is active
         $this->assertDatabaseHas('asset_assignments', [
             'asset_id' => $asset->id,
             'user_id' => $userTwo->id,
@@ -194,8 +194,8 @@ class AssetTest extends TestCase
         $this->actingAsAdmin();
         $asset = Asset::factory()->create(['name' => 'Alter Name']);
 
-        // Nur "name" mitschicken — kein asset_tag, keine Kategorie/Status nötig,
-        // im Gegensatz zu StoreAssetRequest.
+        // Only sending "name" — no asset_tag, no category/status needed,
+        // unlike StoreAssetRequest.
         $this->patchJson("/api/v1/assets/{$asset->id}", [
             'name' => 'Neuer Name',
         ])->assertOk();
@@ -208,8 +208,8 @@ class AssetTest extends TestCase
         $this->actingAsAdmin();
         $asset = Asset::factory()->create(['asset_tag' => 'NB-777']);
 
-        // Das eigene, unveränderte Asset-Tag erneut mitzuschicken darf NICHT als
-        // Duplikat abgelehnt werden.
+        // Resending the asset's own, unchanged tag must NOT be rejected as
+        // a duplicate.
         $this->patchJson("/api/v1/assets/{$asset->id}", [
             'asset_tag' => 'NB-777',
             'name' => 'Aktualisiert',

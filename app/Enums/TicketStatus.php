@@ -8,8 +8,8 @@ use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 /**
- * Enum für die verschiedenen Status eines Tickets.
- * Implementiert Filament-Interfaces für die Darstellung in der UI.
+ * Enum for the various statuses of a ticket.
+ * Implements Filament interfaces for display in the UI.
  */
 enum TicketStatus: string implements HasColor, HasLabel
 {
@@ -20,7 +20,7 @@ enum TicketStatus: string implements HasColor, HasLabel
     case Closed = 'closed';
 
     /**
-     * Gibt die deutsche Bezeichnung des Status zurück.
+     * Returns the German-language label for the status.
      */
     public function label(): string
     {
@@ -34,7 +34,7 @@ enum TicketStatus: string implements HasColor, HasLabel
     }
 
     /**
-     * Gibt die Farbe für die Darstellung des Status zurück.
+     * Returns the color used to display the status.
      */
     public function color(): string
     {
@@ -47,11 +47,11 @@ enum TicketStatus: string implements HasColor, HasLabel
         };
     }
 
-    // ─── Filament-Interfaces ────────────────────────────────────────
-    // Delegieren bewusst an die bestehenden label()/color()-Methoden,
-    // statt sie zu duplizieren — Filament-Badges (Tabelle, Infolist)
-    // übernehmen dadurch automatisch dieselben Bezeichnungen und Farben,
-    // die auch sonst im Projekt für diesen Status gelten.
+    // ─── Filament interfaces ────────────────────────────────────────
+    // Deliberately delegate to the existing label()/color() methods
+    // instead of duplicating them — this way Filament badges (table,
+    // infolist) automatically pick up the same labels and colors used
+    // for this status elsewhere in the project.
 
     public function getLabel(): string
     {
@@ -64,10 +64,11 @@ enum TicketStatus: string implements HasColor, HasLabel
     }
 
     /**
-     * Übergangsmatrix. Gilt einheitlich für alle Rollen — auch Admins nehmen
-     * keinen Sonderweg, um nicht zwei parallele Geschäftsregeln zu erhalten.
-     * Korrekturen außerhalb der Matrix sind bewusst kein Bestandteil des MVP
-     * und müssten als eigener, protokollierter Vorgang erfolgen.
+     * Transition matrix. Applies uniformly to all roles — even admins get
+     * no special path, so as to avoid ending up with two parallel sets of
+     * business rules. Corrections outside the matrix are deliberately not
+     * part of the MVP and would need to happen as a separate, logged
+     * operation.
      *
      * @return list<self>
      */
@@ -84,9 +85,9 @@ enum TicketStatus: string implements HasColor, HasLabel
 
     public function canTransitionTo(self $target): bool
     {
-        // Ein "Wechsel" auf den bereits aktuellen Status ist kein Fehler,
-        // sondern ein No-Op (z.B. wenn ein Update nur andere Felder ändert,
-        // status aber unverändert mitgeschickt wird).
+        // A "change" to the already-current status is not an error but a
+        // no-op (e.g. when an update only changes other fields but still
+        // sends the unchanged status along).
         if ($this === $target) {
             return true;
         }

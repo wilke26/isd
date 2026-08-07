@@ -25,9 +25,9 @@ class EditKbArticle extends EditRecord
     }
 
     /**
-     * Leitet Änderungen durch KbArticleService statt Filaments
-     * Standard-Speicherlogik — sorgt bei Titeländerungen dafür, dass der
-     * Slug automatisch und race-condition-sicher neu generiert wird.
+     * Routes changes through KbArticleService instead of Filament's
+     * standard save logic — ensures that on title changes, the slug is
+     * regenerated automatically and race-condition-safely.
      */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {

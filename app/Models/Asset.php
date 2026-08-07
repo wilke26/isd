@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Repräsentiert ein technisches Asset (Hardware/Inventar) im System.
+ * Represents a technical asset (hardware/inventory) in the system.
  *
  * @mixin IdeHelperAsset
  */
@@ -21,7 +21,7 @@ class Asset extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * Die Attribute, die massenzuweisbar sind.
+     * The attributes that are mass assignable.
      */
     protected $fillable = [
         'asset_category_id',
@@ -38,7 +38,7 @@ class Asset extends Model
     ];
 
     /**
-     * Die Attribute, die konvertiert werden sollen.
+     * Get the attributes that should be cast.
      */
     protected function casts(): array
     {
@@ -49,7 +49,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die Kategorie des Assets zurück.
+     * Returns the asset's category.
      */
     public function category(): BelongsTo
     {
@@ -57,7 +57,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt den Status des Assets zurück (z.B. Bereit, In Reparatur).
+     * Returns the asset's status (e.g. "Bereit", "In Reparatur").
      */
     public function status(): BelongsTo
     {
@@ -65,7 +65,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt das übergeordnete Asset zurück (z.B. Server für eine Festplatte).
+     * Returns the parent asset (e.g. a server for a hard drive).
      */
     public function parent(): BelongsTo
     {
@@ -73,7 +73,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die untergeordneten Assets zurück.
+     * Returns the child assets.
      */
     public function children(): HasMany
     {
@@ -81,7 +81,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die vollständige Zuweisungshistorie zurück.
+     * Returns the complete assignment history.
      */
     public function assignments(): HasMany
     {
@@ -89,11 +89,11 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die aktuelle Zuweisung zurück (falls vorhanden).
+     * Returns the current assignment (if any).
      *
-     * Als HasOne statt HasMany+first() modelliert, da es laut Geschäftsregel
-     * (siehe AssetService::assign(), lockForUpdate) nie mehr als eine aktive
-     * Zuweisung (ohne Rückgabedatum) gleichzeitig geben kann.
+     * Modeled as HasOne instead of HasMany+first() because, per business
+     * rule (see AssetService::assign(), lockForUpdate), there can never be
+     * more than one active assignment (without a return date) at a time.
      */
     public function currentAssignment(): HasOne
     {
@@ -101,7 +101,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die zugewiesenen Software-Lizenzen zurück.
+     * Returns the assigned software licenses.
      */
     public function licenseAssignments(): HasMany
     {
@@ -109,7 +109,7 @@ class Asset extends Model
     }
 
     /**
-     * Gibt die mit diesem Asset verknüpften Tickets zurück.
+     * Returns the tickets linked to this asset.
      */
     public function tickets(): HasMany
     {

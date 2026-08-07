@@ -14,11 +14,11 @@ class CreateKbArticle extends CreateRecord
     protected static string $resource = KbArticleResource::class;
 
     /**
-     * Leitet die Erstellung durch KbArticleService statt Filaments
-     * Standard-Speicherlogik — sorgt dafür, dass der Slug automatisch und
-     * race-condition-sicher generiert wird (statt eines nicht vorhandenen
-     * Formularfelds) und der Autor immer der eingeloggte Nutzer ist, exakt
-     * wie über die API.
+     * Routes creation through KbArticleService instead of Filament's
+     * standard save logic — ensures the slug is generated automatically
+     * and race-condition-safely (instead of a form field that doesn't
+     * exist) and the author is always the logged-in user, exactly as via
+     * the API.
      */
     protected function handleRecordCreation(array $data): Model
     {

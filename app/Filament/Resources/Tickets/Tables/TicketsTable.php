@@ -10,7 +10,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 /**
- * Tabellenkonfiguration für die Ticket-Listenansicht im Filament-Panel.
+ * Table configuration for the ticket list view in the Filament panel.
  */
 class TicketsTable
 {
@@ -56,10 +56,10 @@ class TicketsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            // Kein TrashedFilter, keine Lösch-Aktionen (einzeln oder Bulk):
-            // Tickets hatten in der API nie einen DELETE-Endpunkt — das
-            // Panel führt hier bewusst keine neue, ungetestete Fähigkeit
-            // ein, die es vorher nirgends gab.
+            // No TrashedFilter, no delete actions (single or bulk): tickets
+            // never had a DELETE endpoint in the API — the panel
+            // deliberately does not introduce a new, untested capability
+            // here that didn't exist anywhere before.
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

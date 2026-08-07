@@ -8,7 +8,7 @@ use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 /**
- * Enum für den Status eines Wissensdatenbank-Artikels.
+ * Enum for the status of a knowledge base article.
  */
 enum ArticleStatus: string implements HasColor, HasLabel
 {
@@ -18,7 +18,7 @@ enum ArticleStatus: string implements HasColor, HasLabel
     case Archived = 'archived';
 
     /**
-     * Gibt die deutsche Bezeichnung des Artikelstatus zurück.
+     * Returns the German-language label for the article status.
      */
     public function label(): string
     {
@@ -31,7 +31,7 @@ enum ArticleStatus: string implements HasColor, HasLabel
     }
 
     /**
-     * Gibt die Farbe für die Darstellung des Artikelstatus zurück.
+     * Returns the color used to display the article status.
      */
     public function color(): string
     {

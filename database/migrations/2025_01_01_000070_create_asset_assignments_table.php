@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('asset_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamp('assigned_at')->useCurrent();
-            // NULL = aktuell zugewiesen, gesetzt = zurückgegeben
+            // NULL = currently assigned, set = returned
             $table->timestamp('returned_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

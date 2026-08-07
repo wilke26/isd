@@ -30,7 +30,7 @@ class License extends Model
     protected function casts(): array
     {
         return [
-            // Lizenzschlüssel wird verschlüsselt in der Datenbank gespeichert
+            // License key is stored encrypted in the database
             'license_key' => 'encrypted',
             'expires_at' => 'date',
             'seats_total' => 'integer',

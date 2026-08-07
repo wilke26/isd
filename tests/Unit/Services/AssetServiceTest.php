@@ -85,7 +85,7 @@ class AssetServiceTest extends TestCase
     {
         $asset = Asset::factory()->create();
 
-        // Kein Fehler, auch wenn kein aktives Assignment existiert
+        // No error, even if no active assignment exists
         $this->service->unassign($asset);
 
         $this->assertDatabaseCount('asset_assignments', 0);

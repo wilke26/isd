@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * REST-API-Controller für Asset-CRUD sowie Zuweisung/Freigabe und Historie.
+ * REST API controller for asset CRUD as well as assignment/release and history.
  */
 class AssetController extends Controller
 {
@@ -90,8 +90,8 @@ class AssetController extends Controller
     public function unassign(int $id): JsonResponse
     {
         $asset = $this->assetService->findOrFail($id);
-        // Keine eigene 'unassign'-Ability — wer zuweisen darf, darf auch
-        // freigeben, beides ist derselbe Staff-only-Vorgang.
+        // No dedicated 'unassign' ability — whoever may assign may also
+        // release, both are the same staff-only operation.
         $this->authorize('assign', $asset);
 
         $this->assetService->unassign($asset);
@@ -102,9 +102,9 @@ class AssetController extends Controller
     public function history(int $id): JsonResponse
     {
         $asset = $this->assetService->findOrFail($id);
-        // Eigene Ability statt 'view' — die Historie zeigt auch frühere
-        // Besitzer namentlich, das darf ein Requester nicht sehen, selbst
-        // wenn ihm das Asset gerade zugewiesen ist.
+        // Own ability instead of 'view' — the history also shows previous
+        // owners by name, which a requester may not see, even if the asset
+        // is currently assigned to them.
         $this->authorize('viewHistory', $asset);
 
         $assignments = $this->assetService->assignmentHistory($asset);

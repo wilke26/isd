@@ -31,7 +31,7 @@ class AssetSeeder extends Seeder
         $available = AssetStatus::where('name', 'Verfügbar')->first();
         $inUse = AssetStatus::where('name', 'In Verwendung')->first();
 
-        // ─── Kategorien (hierarchisch) ─────────────────────────────
+        // ─── Categories (hierarchical) ───────────────────────────────
         $hardware = AssetCategory::firstOrCreate(['name' => 'Hardware'], ['parent_id' => null]);
         $software = AssetCategory::firstOrCreate(['name' => 'Software'], ['parent_id' => null]);
         $network = AssetCategory::firstOrCreate(['name' => 'Netzwerk'], ['parent_id' => null]);
@@ -104,7 +104,7 @@ class AssetSeeder extends Seeder
             Asset::firstOrCreate(['asset_tag' => $assetData['asset_tag']], $assetData);
         }
 
-        // ─── Zuweisungen ───────────────────────────────────────────
+        // ─── Assignments ──────────────────────────────────────────────
         $clara = User::where('email', 'c.weber@isd.local')->first();
         $david = User::where('email', 'd.bauer@isd.local')->first();
         $anna = User::where('email', 'a.mueller@isd.local')->first();

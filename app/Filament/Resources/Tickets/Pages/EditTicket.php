@@ -26,17 +26,17 @@ class EditTicket extends EditRecord
     }
 
     /**
-     * Leitet jede Änderung durch TicketService::update() statt Filaments
-     * Standard-Speicherlogik — nur so bleiben Übergangsmatrix, Sperre gegen
-     * Parallelzugriffe und Audit Trail auch im Panel wirksam, nicht nur
-     * über die API.
+     * Routes every change through TicketService::update() instead of
+     * Filament's standard save logic — this is the only way the transition
+     * matrix, the lock against concurrent access, and the audit trail also
+     * remain effective in the panel, not just via the API.
      */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        // Filaments handleRecordUpdate() ist generisch mit der Basisklasse
-        // Model typisiert; diese Page ist aber ausschließlich an die
-        // Ticket-Resource gebunden, $record ist zur Laufzeit immer ein
-        // Ticket. assert() gibt PHPStan die dafür nötige Typ-Engführung.
+        // Filament's handleRecordUpdate() is generically typed with the
+        // base Model class; but this page is bound exclusively to the
+        // Ticket resource, $record is always a Ticket at runtime. assert()
+        // gives PHPStan the type narrowing it needs for that.
         assert($record instanceof Ticket);
 
         try {

@@ -14,8 +14,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 /**
- * Tabellenkonfiguration für die KB-Artikel-Listenansicht im Filament-Panel,
- * inklusive der Workflow-Aktionen aus KbArticleWorkflowActions.
+ * Table configuration for the KB article list view in the Filament panel,
+ * including the workflow actions from KbArticleWorkflowActions.
  */
 class KbArticlesTable
 {
@@ -56,11 +56,11 @@ class KbArticlesTable
                 ...KbArticleWorkflowActions::make(),
             ])
             ->toolbarActions([
-                // Nur DeleteBulkAction: entspricht der bestehenden,
-                // policy-gesteuerten API-Fähigkeit (Admin alle, Agent
-                // eigene, Requester eigene Entwürfe). ForceDeleteBulkAction/
-                // RestoreBulkAction absichtlich entfernt — die API hatte
-                // dafür nie Endpunkte.
+                // Only DeleteBulkAction: matches the existing,
+                // policy-driven API capability (admin all, agent their
+                // own, requester their own drafts). ForceDeleteBulkAction/
+                // RestoreBulkAction deliberately removed — the API never
+                // had endpoints for those.
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

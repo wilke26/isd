@@ -11,10 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('kb_articles', function (Blueprint $table) {
-            // Additiver, zeitgestempelter Ergänzungsverlauf für bereits
-            // veröffentlichte/archivierte Artikel — der ursprüngliche
-            // Haupttext (body) bleibt dabei unverändert, jede Ergänzung
-            // wird hier angehängt statt hineingemischt.
+            // Additive, timestamped addendum history for articles that are
+            // already published/archived — the original main text (body)
+            // remains unchanged, each addendum is appended here instead of
+            // being mixed in.
             $table->text('addendum')->nullable()->after('body');
         });
     }

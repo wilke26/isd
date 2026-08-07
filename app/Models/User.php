@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * Repräsentiert einen Benutzer im System.
+ * Represents a user in the system.
  *
  * @mixin IdeHelperUser
  */
@@ -21,7 +21,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * Die Attribute, die massenzuweisbar sind.
+     * The attributes that are mass assignable.
      *
      * @var list<string>
      */
@@ -32,7 +32,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Die Attribute, die in JSON-Serialisierungen verborgen werden sollen.
+     * The attributes that should be hidden for serialization.
      *
      * @var list<string>
      */
@@ -42,7 +42,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Die Attribute, die konvertiert werden sollen.
+     * Get the attributes that should be cast.
      */
     protected function casts(): array
     {
@@ -52,10 +52,10 @@ class User extends Authenticatable
         ];
     }
 
-    // ─── Rollen & Berechtigungen ───────────────────────────────────
+    // ─── Roles & permissions ─────────────────────────────────────
 
     /**
-     * Gibt die Rollen des Benutzers zurück.
+     * Returns the user's roles.
      */
     public function roles(): BelongsToMany
     {
@@ -63,7 +63,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Prüft, ob der Benutzer eine bestimmte Rolle besitzt.
+     * Checks whether the user has a given role.
      */
     public function hasRole(string $slug): bool
     {
@@ -73,7 +73,7 @@ class User extends Authenticatable
     // ─── Assets ───────────────────────────────────────────────────
 
     /**
-     * Gibt alle Zuweisungen von Assets an diesen Benutzer zurück.
+     * Returns all asset assignments for this user.
      */
     public function assetAssignments(): HasMany
     {
@@ -81,7 +81,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Gibt die aktuell dem Benutzer zugewiesenen Assets zurück.
+     * Returns the assets currently assigned to the user.
      */
     public function currentAssets(): HasMany
     {
@@ -89,7 +89,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Gibt die dem Benutzer zugewiesenen Software-Lizenzen zurück.
+     * Returns the software licenses assigned to the user.
      */
     public function licenseAssignments(): HasMany
     {
@@ -99,7 +99,7 @@ class User extends Authenticatable
     // ─── Tickets ──────────────────────────────────────────────────
 
     /**
-     * Gibt die Tickets zurück, die dieser User erstellt hat.
+     * Returns the tickets this user created.
      */
     public function requestedTickets(): HasMany
     {
@@ -107,7 +107,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Gibt die Tickets zurück, die diesem User zur Bearbeitung zugewiesen sind.
+     * Returns the tickets assigned to this user for handling.
      */
     public function assignedTickets(): HasMany
     {
@@ -115,17 +115,17 @@ class User extends Authenticatable
     }
 
     /**
-     * Gibt die Kommentare zurück, die dieser User zu Tickets verfasst hat.
+     * Returns the comments this user has written on tickets.
      */
     public function ticketComments(): HasMany
     {
         return $this->hasMany(TicketComment::class);
     }
 
-    // ─── Wissensdatenbank ─────────────────────────────────────────
+    // ─── Knowledge base ───────────────────────────────────────────
 
     /**
-     * Gibt die Wissensdatenbank-Artikel zurück, deren Autor dieser User ist.
+     * Returns the knowledge base articles authored by this user.
      */
     public function kbArticles(): HasMany
     {

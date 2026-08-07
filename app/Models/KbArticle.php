@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Repräsentiert einen Artikel in der Wissensdatenbank (Knowledge Base).
+ * Represents an article in the knowledge base.
  *
  * @mixin IdeHelperKbArticle
  */
@@ -21,7 +21,7 @@ class KbArticle extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * Die Attribute, die massenzuweisbar sind.
+     * The attributes that are mass assignable.
      *
      * @var list<string>
      */
@@ -36,7 +36,7 @@ class KbArticle extends Model
     ];
 
     /**
-     * Die Attribute, die konvertiert werden sollen.
+     * Get the attributes that should be cast.
      */
     protected function casts(): array
     {
@@ -47,7 +47,7 @@ class KbArticle extends Model
     }
 
     /**
-     * Gibt den Autor des Artikels zurück.
+     * Returns the author of the article.
      */
     public function author(): BelongsTo
     {
@@ -55,7 +55,7 @@ class KbArticle extends Model
     }
 
     /**
-     * Gibt die Kategorie des Artikels zurück.
+     * Returns the category of the article.
      */
     public function category(): BelongsTo
     {
@@ -63,7 +63,7 @@ class KbArticle extends Model
     }
 
     /**
-     * Gibt die Schlagwörter (Tags) des Artikels zurück.
+     * Returns the article's tags.
      */
     public function tags(): BelongsToMany
     {
@@ -71,7 +71,7 @@ class KbArticle extends Model
     }
 
     /**
-     * Prüft, ob der Artikel veröffentlicht ist.
+     * Checks whether the article is published.
      */
     public function isPublished(): bool
     {

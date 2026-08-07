@@ -12,8 +12,8 @@ class StoreTicketRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Autorisierung läuft explizit im Controller über die Policy
-        // (create), nicht hier — konsistent mit dem übrigen Projekt.
+        // Authorization runs explicitly in the controller via the policy
+        // (create), not here — consistent with the rest of the project.
         return true;
     }
 

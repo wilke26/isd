@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('vendor', 100);
             $table->string('product');
-            // Verschlüsselt speichern via Laravel Encryption (cast im Model)
+            // Stored encrypted via Laravel Encryption (cast in the model)
             $table->text('license_key')->nullable();
             $table->unsignedInteger('seats_total');
             $table->unsignedInteger('seats_used')->default(0);

@@ -14,10 +14,10 @@ class CreateTicket extends CreateRecord
     protected static string $resource = TicketResource::class;
 
     /**
-     * Leitet die Erstellung durch TicketService statt Filaments
-     * Standard-Speicherlogik (rohes Eloquent-create()) — sorgt dafür, dass
-     * der initiale History-Eintrag ("open") genauso entsteht wie über die
-     * API, unabhängig vom Eingabeweg.
+     * Routes creation through TicketService instead of Filament's standard
+     * save logic (raw Eloquent create()) — ensures the initial history
+     * entry ("open") is created the same way as via the API, regardless of
+     * the entry path.
      */
     protected function handleRecordCreation(array $data): Model
     {

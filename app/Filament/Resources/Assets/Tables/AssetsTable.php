@@ -21,8 +21,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 /**
- * Tabellenkonfiguration für die Asset-Listenansicht im Filament-Panel,
- * inklusive der eigenen Zuweisen/Freigeben-Aktionen.
+ * Table configuration for the asset list view in the Filament panel,
+ * including the custom assign/release actions.
  */
 class AssetsTable
 {
@@ -40,10 +40,10 @@ class AssetsTable
                 TextColumn::make('status.name')
                     ->label('Status')
                     ->badge()
-                    // AssetStatus ist eine DB-Tabelle mit rohem Hex-Wert
-                    // (asset_statuses.color), kein PHP-Enum mit HasColor wie
-                    // bei TicketStatus — Color::hex() generiert daraus zur
-                    // Laufzeit eine passende Farbpalette.
+                    // AssetStatus is a DB table with a raw hex value
+                    // (asset_statuses.color), not a PHP enum with HasColor
+                    // like TicketStatus — Color::hex() generates a matching
+                    // color palette from it at runtime.
                     ->color(fn ($record) => Color::hex($record->status->color)),
                 TextColumn::make('parent.name')
                     ->label('Parent Asset')
@@ -83,10 +83,11 @@ class AssetsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
-                // Eigene Aktionen statt Formularfelder — leiten auf
-                // AssetService::assign()/unassign() um, damit die Sperre
-                // gegen Parallelzugriffe und das automatische Beenden der
-                // Vorzuweisung auch im Panel greifen, nicht nur über die API.
+                // Custom actions instead of form fields — delegate to
+                // AssetService::assign()/unassign() so that the lock
+                // against concurrent access and the automatic ending of the
+                // previous assignment also apply in the panel, not just via
+                // the API.
                 Action::make('assign')
                     ->label('Zuweisen')
                     ->icon(Heroicon::OutlinedUserPlus)
@@ -124,10 +125,10 @@ class AssetsTable
                     }),
             ])
             ->toolbarActions([
-                // Nur DeleteBulkAction: entspricht der bestehenden, admin-
-                // beschränkten API-Fähigkeit (AssetPolicy::delete()).
-                // ForceDeleteBulkAction/RestoreBulkAction absichtlich
-                // entfernt — die API hatte dafür nie Endpunkte.
+                // Only DeleteBulkAction: matches the existing, admin-only
+                // API capability (AssetPolicy::delete()).
+                // ForceDeleteBulkAction/RestoreBulkAction deliberately
+                // removed — the API never had endpoints for those.
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Exception, die geworfen wird, wenn ein ungültiger Statusübergang für ein Ticket versucht wird.
+ * Exception thrown when an invalid status transition is attempted for a ticket.
  */
 class InvalidTicketStatusTransitionException extends Exception
 {
@@ -21,8 +21,8 @@ class InvalidTicketStatusTransitionException extends Exception
     }
 
     /**
-     * Laravel ruft render() automatisch auf, wenn die Exception diese Methode
-     * besitzt — keine zusätzliche Registrierung in bootstrap/app.php nötig.
+     * Laravel automatically calls render() when the exception has this
+     * method — no additional registration in bootstrap/app.php needed.
      */
     public function render(Request $request): JsonResponse
     {

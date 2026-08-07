@@ -14,7 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('asset_category_id')->constrained()->restrictOnDelete();
             $table->foreignId('asset_status_id')->constrained()->restrictOnDelete();
-            // Hierarchie: z.B. Festplatte ist Kind eines Servers
+            // Hierarchy: e.g. a hard drive is a child of a server
             $table->foreignId('parent_asset_id')->nullable()->constrained('assets')->nullOnDelete();
             $table->string('asset_tag', 50)->unique();
             $table->string('name');

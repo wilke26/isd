@@ -17,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Auf jeden Request angewendet, inkl. /up und /metrics — Request-ID
-        // zuerst, damit sie in allen nachfolgenden Log-Zeilen verfügbar ist.
+        // Applied to every request, including /up and /metrics — request ID
+        // first, so it's available in all subsequent log lines.
         $middleware->append([
             AssignRequestId::class,
             RecordRequestMetrics::class,

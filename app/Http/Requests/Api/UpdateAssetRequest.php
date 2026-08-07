@@ -11,14 +11,14 @@ class UpdateAssetRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Autorisierung läuft explizit im Controller über die Policy
-        // (update), nicht hier — konsistent mit dem übrigen Projekt.
+        // Authorization runs explicitly in the controller via the policy
+        // (update), not here — consistent with the rest of the project.
         return true;
     }
 
     public function rules(): array
     {
-        // Die Route lautet PATCH /assets/{id} — der Routenparameter heißt "id".
+        // The route is PATCH /assets/{id} — the route parameter is named "id".
         $assetId = $this->route('id');
 
         return [
@@ -26,9 +26,9 @@ class UpdateAssetRequest extends FormRequest
                 'sometimes',
                 'string',
                 'max:50',
-                // Beim Update das eigene Asset von der Unique-Prüfung ausnehmen,
-                // sonst würde das unveränderte eigene Asset-Tag als Duplikat
-                // abgelehnt.
+                // Exclude the asset's own record from the unique check on
+                // update, otherwise the unchanged asset tag would be
+                // incorrectly rejected as a duplicate.
                 Rule::unique('assets', 'asset_tag')->ignore($assetId),
             ],
             'name' => ['sometimes', 'string', 'max:255'],
