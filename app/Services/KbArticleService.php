@@ -110,16 +110,13 @@ class KbArticleService
             throw new \RuntimeException('Konnte nach mehreren Versuchen keinen eindeutigen Slug generieren.');
         }
 
+        // Status transitions and their timestamps belong exclusively to the
+        // workflow methods below. Keep this invariant even if a future caller
+        // forgets to validate its input before invoking the service.
+        unset($data['status'], $data['published_at']);
+
         if (isset($data['title']) && $data['title'] !== $article->title) {
             $data['slug'] = $this->uniqueSlug($data['title'], $article->id);
-        }
-
-        if (
-            isset($data['status'])
-            && $data['status'] === ArticleStatus::Published->value
-            && $article->status !== ArticleStatus::Published
-        ) {
-            $data['published_at'] = now();
         }
 
         try {

@@ -20,10 +20,14 @@ class StoreKbArticleRequest extends FormRequest
 
     public function rules(): array
     {
+        $isStaff = $this->user()?->hasRole('admin') || $this->user()?->hasRole('agent');
+
         return [
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
-            'status' => ['sometimes', new Enum(ArticleStatus::class)],
+            'status' => $isStaff
+                ? ['sometimes', new Enum(ArticleStatus::class)]
+                : ['prohibited'],
             'category_id' => ['nullable', 'exists:kb_categories,id'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['exists:tags,id'],
