@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AddKbArticleAddendumRequest;
 use App\Http\Requests\Api\StoreKbArticleRequest;
+use App\Http\Requests\Api\UpdateKbArticleRequest;
 use App\Http\Resources\Api\KbArticleResource;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
@@ -53,7 +54,7 @@ class KbArticleController extends Controller
         return new KbArticleResource($article);
     }
 
-    public function update(StoreKbArticleRequest $request, int $id): KbArticleResource
+    public function update(UpdateKbArticleRequest $request, int $id): KbArticleResource
     {
         $article = $this->kbService->findOrFail($id);
         $this->authorize('update', $article);

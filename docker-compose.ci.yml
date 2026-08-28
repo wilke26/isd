@@ -13,8 +13,9 @@ services:
     build:
       target: development
     image: it-service-desk/app:dev-ci
-    # In CI läuft kein Dauerbetrieb; Container werden gezielt per `run` gestartet.
-    entrypoint: ["true"]
+    # In CI läuft kein Dauerbetrieb; Container werden gezielt per `run`
+    # gestartet. Der Image-Entrypoint bleibt dabei erhalten, damit die an
+    # `run` übergebenen Composer/PHP-Kommandos tatsächlich ausgeführt werden.
 
   # In CI nicht benötigt — werden dadurch von "docker compose up" nicht mehr
   # automatisch gestartet, sind aber bei Bedarf weiterhin per Name ansprechbar.

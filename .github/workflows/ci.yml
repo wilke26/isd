@@ -37,6 +37,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Verify production image contains no local secrets or development artifacts
+        run: |
+          docker run --rm --entrypoint sh it-service-desk/app:prod-ci -ec '
+            for path in /app/.env /app/.env.docker /app/.git /app/node_modules /app/tests; do
+              if [ -e "$path" ]; then
+                echo "Forbidden production-image path: $path" >&2
+                exit 1
+              fi
+            done
+          '
+
   # ---------------------------------------------------------------
   # Job 2: Tests gegen den echten Stack (FrankenPHP-Container + MySQL
   # + Redis), über dieselbe docker-compose.yml wie lokal.
@@ -124,6 +135,12 @@ jobs:
         run: |
           docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
             run --rm app composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Verify CI commands execute inside the app container
+        run: |
+          output="$(docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
+            run --rm app php -r 'echo "ci-command-executed";')"
+          test "$output" = "ci-command-executed"
 
       - name: Generate application key
         run: |

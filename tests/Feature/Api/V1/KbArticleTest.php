@@ -117,6 +117,21 @@ class KbArticleTest extends TestCase
             ->assertJsonValidationErrors(['title', 'body']);
     }
 
+    public function test_requester_cannot_choose_article_status_on_creation(): void
+    {
+        $this->actingAsUser();
+
+        $this->postJson('/api/v1/kb/articles', [
+            'title' => 'Umgehungsversuch',
+            'body' => 'Dieser Artikel darf nicht direkt veröffentlicht werden.',
+            'status' => ArticleStatus::Published->value,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertDatabaseMissing('kb_articles', ['title' => 'Umgehungsversuch']);
+    }
+
     public function test_slug_is_generated_from_title(): void
     {
         $this->actingAsAgent();
@@ -156,6 +171,37 @@ class KbArticleTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('data.title', 'Aktualisierter Titel');
+    }
+
+    public function test_requester_cannot_publish_own_article_through_generic_update(): void
+    {
+        $author = $this->actingAsUser();
+        $article = KbArticle::factory()->draft()->create(['author_id' => $author->id]);
+
+        $this->patchJson("/api/v1/kb/articles/{$article->id}", [
+            'status' => ArticleStatus::Published->value,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertSame(ArticleStatus::Draft, $article->fresh()->status);
+        $this->assertNull($article->fresh()->published_at);
+    }
+
+    public function test_staff_cannot_bypass_workflow_through_generic_update(): void
+    {
+        $this->actingAsAdmin();
+        $article = KbArticle::factory()->draft()->create();
+
+        $this->patchJson("/api/v1/kb/articles/{$article->id}", [
+            'status' => ArticleStatus::Published->value,
+            'published_at' => now()->toISOString(),
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status', 'published_at']);
+
+        $this->assertSame(ArticleStatus::Draft, $article->fresh()->status);
+        $this->assertNull($article->fresh()->published_at);
     }
 
     // ─── Destroy ──────────────────────────────────────────────────
