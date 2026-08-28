@@ -70,6 +70,15 @@ class KbArticleTest extends TestCase
             ->assertJsonPath('data.0.title', 'VPN einrichten Windows');
     }
 
+    public function test_article_list_rejects_unbounded_pagination(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/v1/kb/articles?per_page=1000')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('per_page');
+    }
+
     // ─── Store ────────────────────────────────────────────────────
 
     public function test_agent_can_create_draft_article(): void

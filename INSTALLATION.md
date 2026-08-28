@@ -49,7 +49,7 @@ Die Dateien `isd.local.pem` und `isd.local-key.pem` landen im Projektverzeichnis
 
 | Datei | Wird gelesen von | Zweck |
 |---|---|---|
-| `.env` | Laravel (innerhalb des Containers) | `APP_KEY`, `DB_*`, `REDIS_*`, `LOKI_*` — die eigentliche Anwendungskonfiguration |
+| `.env` | Laravel (innerhalb des Containers) | `APP_KEY`, `DB_*`, `REDIS_*`, `LOKI_*`, `METRICS_TOKEN` — die eigentliche Anwendungskonfiguration |
 | `.env.docker` | `docker compose` (auf dem Host) | `UID`/`GID`, MySQL-Root-Passwort — nur für den Compose-Aufruf selbst |
 
 ```bash
@@ -153,7 +153,7 @@ docker compose --env-file .env.docker cp isd.local-key.pem app:/data/caddy/certi
 
 - **https://isd.local** → Laravel-Willkommensseite
 - **http://localhost:8025** → Mailpit (E-Mail-Vorschau)
-- **http://isd.local/metrics** → Prometheus-Metriken (Ticket-Zahlen, Request-Statistiken)
+- **http://isd.local/metrics** → Prometheus-Metriken (Bearer-Token erforderlich)
 
 API-Test:
 ```bash
@@ -212,6 +212,7 @@ Voraussetzung: Der separate `observability-stack` (Prometheus/Grafana/Loki) läu
 ```dotenv
 LOKI_ENDPOINT=http://host.docker.internal:3100/loki/api/v1/push
 LOKI_JOB=isd
+METRICS_TOKEN=<zufälliger-geheimer-wert>
 ```
 
 ### 2. Prometheus-Scrape-Ziel im `observability-stack` ergänzen
@@ -222,9 +223,16 @@ In `prometheus/prometheus.yml` dieses Repos (separat!):
 scrape_configs:
   - job_name: isd
     metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/isd_metrics_token
     static_configs:
       - targets: ["host.docker.internal:80"]
 ```
+
+Die referenzierte Secret-Datei muss ausschließlich den gleichen Wert wie
+`METRICS_TOKEN` enthalten und in den Prometheus-Container gemountet werden.
+Der Token gehört weder in Git noch direkt in `prometheus.yml`.
 
 Danach Prometheus neu laden:
 ```bash
@@ -234,7 +242,7 @@ docker compose restart prometheus
 ### 3. Verbindung prüfen
 
 ```bash
-curl -fsS http://localhost/metrics
+curl -fsS -H "Authorization: Bearer ${METRICS_TOKEN}" http://localhost/metrics
 ```
 
 Danach [Prometheus Targets](http://localhost:9090/targets) öffnen — der Job `isd` muss `UP` sein.

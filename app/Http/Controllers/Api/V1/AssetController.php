@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ListAssetsRequest;
 use App\Http\Requests\Api\StoreAssetRequest;
 use App\Http\Requests\Api\UpdateAssetRequest;
 use App\Http\Resources\Api\AssetResource;
@@ -24,13 +25,13 @@ class AssetController extends Controller
         private readonly AssetService $assetService,
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListAssetsRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Asset::class);
 
         $assets = $this->assetService->list(
             user: $request->user(),
-            filters: $request->only(['category_id', 'status_id', 'search', 'per_page']),
+            filters: $request->validated(),
         );
 
         return AssetResource::collection($assets);

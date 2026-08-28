@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\V1;
 
 use App\Enums\TicketStatus;
+use App\Models\Asset;
+use App\Models\AssetAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -73,6 +75,19 @@ class TicketTest extends TestCase
             ->assertJsonPath('data.0.title', 'VPN funktioniert nicht');
     }
 
+    public function test_ticket_list_rejects_unbounded_or_invalid_filters(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/v1/tickets?per_page=1000')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('per_page');
+
+        $this->getJson('/api/v1/tickets?status=invalid')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+    }
+
     // ─── Store ────────────────────────────────────────────────────
 
     public function test_authenticated_user_can_create_ticket(): void
@@ -124,6 +139,69 @@ class TicketTest extends TestCase
             'field' => 'status',
             'new_value' => 'open',
         ]);
+    }
+
+    public function test_requester_can_link_a_currently_assigned_asset(): void
+    {
+        $requester = $this->actingAsUser();
+        $asset = Asset::factory()->create();
+        AssetAssignment::create([
+            'asset_id' => $asset->id,
+            'user_id' => $requester->id,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/v1/tickets', [
+            'title' => 'Problem mit meinem Laptop',
+            'description' => 'Das Gerät startet nicht.',
+            'asset_id' => $asset->id,
+        ]);
+
+        $response->assertCreated()->assertJsonPath('asset.id', $asset->id);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $response->json('id'),
+            'asset_id' => $asset->id,
+            'requester_id' => $requester->id,
+        ]);
+    }
+
+    public function test_requester_cannot_link_an_unassigned_or_returned_asset(): void
+    {
+        $requester = $this->actingAsUser();
+        $unassignedAsset = Asset::factory()->create();
+        $returnedAsset = Asset::factory()->create();
+        AssetAssignment::create([
+            'asset_id' => $returnedAsset->id,
+            'user_id' => $requester->id,
+            'assigned_at' => now()->subDay(),
+            'returned_at' => now(),
+        ]);
+
+        foreach ([$unassignedAsset, $returnedAsset] as $asset) {
+            $this->postJson('/api/v1/tickets', [
+                'title' => 'Unzulässige Asset-Verknüpfung',
+                'description' => 'Dieses Gerät ist nicht aktuell zugewiesen.',
+                'asset_id' => $asset->id,
+            ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('asset_id');
+        }
+
+        $this->assertDatabaseMissing('tickets', ['title' => 'Unzulässige Asset-Verknüpfung']);
+    }
+
+    public function test_staff_can_link_any_existing_asset(): void
+    {
+        $this->actingAsAgent();
+        $asset = Asset::factory()->create();
+
+        $this->postJson('/api/v1/tickets', [
+            'title' => 'Asset durch Support verknüpft',
+            'description' => 'Support ordnet das betroffene Gerät zu.',
+            'asset_id' => $asset->id,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('asset.id', $asset->id);
     }
 
     // ─── Show ─────────────────────────────────────────────────────

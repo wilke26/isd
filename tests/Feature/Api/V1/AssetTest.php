@@ -59,6 +59,15 @@ class AssetTest extends TestCase
             ->assertJsonPath('data.0.name', 'MacBook Pro');
     }
 
+    public function test_asset_list_rejects_unbounded_pagination(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/v1/assets?per_page=1000')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('per_page');
+    }
+
     // ─── Store ────────────────────────────────────────────────────
 
     public function test_admin_can_create_asset(): void

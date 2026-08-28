@@ -6,13 +6,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AddKbArticleAddendumRequest;
+use App\Http\Requests\Api\ListKbArticlesRequest;
 use App\Http\Requests\Api\StoreKbArticleRequest;
 use App\Http\Requests\Api\UpdateKbArticleRequest;
 use App\Http\Resources\Api\KbArticleResource;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -25,13 +25,13 @@ class KbArticleController extends Controller
         private readonly KbArticleService $kbService,
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListKbArticlesRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', KbArticle::class);
 
         $articles = $this->kbService->list(
             user: $request->user(),
-            filters: $request->only(['category_id', 'status', 'tag', 'search', 'per_page']),
+            filters: $request->validated(),
         );
 
         return KbArticleResource::collection($articles);

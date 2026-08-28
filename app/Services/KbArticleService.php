@@ -35,7 +35,7 @@ class KbArticleService
                     ->orWhere('body', 'like', '%' . $filters['search'] . '%');
             }))
             ->latest('published_at')
-            ->paginate($filters['per_page'] ?? 15);
+            ->paginate(max(1, min(100, (int) ($filters['per_page'] ?? 15))));
     }
 
     public function findOrFail(int $id): KbArticle

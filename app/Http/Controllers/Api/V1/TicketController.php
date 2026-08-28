@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ListTicketsRequest;
 use App\Http\Requests\Api\StoreTicketAttachmentRequest;
 use App\Http\Requests\Api\StoreTicketRequest;
 use App\Http\Requests\Api\UpdateTicketRequest;
@@ -28,13 +29,13 @@ class TicketController extends Controller
         private readonly TicketService $ticketService,
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListTicketsRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Ticket::class);
 
         $tickets = $this->ticketService->list(
             user: $request->user(),
-            filters: $request->only(['status', 'priority', 'assignee_id', 'search', 'per_page']),
+            filters: $request->validated(),
         );
 
         return TicketResource::collection($tickets);

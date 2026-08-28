@@ -39,7 +39,7 @@ class AssetService
                     ->orWhere('serial_number', 'like', '%' . $filters['search'] . '%');
             }))
             ->latest()
-            ->paginate($filters['per_page'] ?? 15);
+            ->paginate(max(1, min(100, (int) ($filters['per_page'] ?? 15))));
     }
 
     /**
