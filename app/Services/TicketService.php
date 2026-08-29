@@ -15,6 +15,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class TicketService
 {
@@ -34,7 +35,7 @@ class TicketService
             ->when(isset($filters['search']), fn ($q) => $q->where('title', 'like', '%' . $filters['search'] . '%'))
             ->latest();
 
-        return $query->paginate($filters['per_page'] ?? 15);
+        return $query->paginate($this->perPage($filters));
     }
 
     public function findOrFail(int $id): Ticket
@@ -63,6 +64,20 @@ class TicketService
      */
     public function create(User $requester, array $data, ?int $requesterId = null): Ticket
     {
+        if (
+            isset($data['asset_id'])
+            && ! $requester->hasRole('admin')
+            && ! $requester->hasRole('agent')
+            && ! $requester->assetAssignments()
+                ->where('asset_id', $data['asset_id'])
+                ->whereNull('returned_at')
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'asset_id' => ['Das ausgewählte Asset ist dir nicht aktuell zugewiesen.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($requester, $data, $requesterId) {
             $ticket = Ticket::create([
                 ...$data,
@@ -235,5 +250,11 @@ class TicketService
             'old_value' => $old,
             'new_value' => $new,
         ]);
+    }
+
+    /** Clamp pagination for trusted internal callers as defense in depth. */
+    private function perPage(array $filters): int
+    {
+        return max(1, min(100, (int) ($filters['per_page'] ?? 15)));
     }
 }

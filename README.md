@@ -114,7 +114,7 @@ Laravel 13
 ├── MySQL (27+ Tabellen, normalisiertes Schema)
 ├── Redis (Cache/Queue/Sessions + Request-Metrik-Zähler)
 ├── Migrations + Seeders
-└── PHPUnit Tests (92 Tests)
+└── PHPUnit Tests
 ```
 
 Das Projekt folgt dem **Service-Layer-Pattern**: Controller autorisieren über Policies und delegieren Geschäftslogik an Services, die direkt mit Eloquent-Models arbeiten. Ein zusätzliches Repository-Pattern wurde bewusst nicht eingesetzt, da Eloquent bereits eine saubere Datenzugriffs-Abstraktion bietet.
@@ -157,6 +157,7 @@ set_env_var QUEUE_CONNECTION redis
 set_env_var SESSION_DRIVER redis
 set_env_var MAIL_HOST mailpit
 set_env_var MAIL_PORT 1025
+set_env_var METRICS_TOKEN "$(openssl rand -hex 32)"
 
 docker compose --env-file .env.docker build
 docker compose --env-file .env.docker up -d
@@ -167,7 +168,7 @@ docker compose --env-file .env.docker exec app php artisan migrate --seed
 
 Anwendung erreichbar unter: **https://isd.local**
 Mailpit (E-Mail-Vorschau): http://localhost:8025
-Metriken: http://isd.local/metrics
+Metriken: http://isd.local/metrics (Bearer-Token aus `METRICS_TOKEN` erforderlich)
 
 Login-Zugangsdaten (Testdaten):
 - Admin: `admin@isd.local` / `password`
@@ -212,13 +213,13 @@ Jede Ressource ist über eine dedizierte Laravel-Policy abgesichert (`app/Polici
 ISD ist an einen separaten, eigenständigen `observability-stack` (Prometheus/Grafana/Loki) angebunden — einseitig über `host.docker.internal`, ohne gemeinsames Docker-Netzwerk:
 
 ```
-Prometheus :9090 ──GET host.docker.internal:80/metrics──> ISD :80
+Prometheus :9090 ──GET /metrics + Bearer-Token──> ISD :80
 ISD ──HTTP Push──> Loki :3100
 ISD ──Redis-Zähler──> Redis (Request-Rate/Latenz)
 Grafana :3000 ──> Prometheus, Loki
 ```
 
-- **Metriken:** `isd_tickets_by_status`, `isd_http_requests_total`, `isd_http_request_duration_seconds_{sum,count}`
+- **Metriken:** `isd_tickets_by_status`, `isd_http_requests_total`, `isd_http_request_duration_seconds_{sum,count}`; `/metrics` ist mit einem separaten Bearer-Token geschützt
 - **Logs:** strukturierte JSON-Zeilen pro abgeschlossenem Request, mit `request_id` als durchsuchbarem JSON-Feld (bewusst kein Loki-Label, um Kardinalitätsexplosion zu vermeiden)
 - **Request-ID-Korrelation:** Response-Header `X-Request-Id` → LogQL-Suche `{job="isd"} | json | request_id="..."`
 
@@ -240,7 +241,7 @@ docker compose --env-file .env.docker exec app php artisan test --testsuite=Feat
 docker compose --env-file .env.docker exec app php artisan test --coverage
 ```
 
-**Aktueller Teststand:** 101 Tests, 0 Fehler — inkl. dedizierter Unit-Tests für die Ticket-Status-Übergangsmatrix, den Loki-Log-Handler und Autorisierungs-Grenzfälle (z. B. "Agent darf fremden Wissensartikel nicht löschen").
+Die verbindliche, stets aktuelle Testzahl steht im CI-Lauf. Die Suite enthält unter anderem dedizierte Tests für die Ticket-Status-Übergangsmatrix, den Loki-Log-Handler und Autorisierungs-Grenzfälle.
 
 Tests laufen gegen eine SQLite-In-Memory-Datenbank (`phpunit.xml`) und sind vollständig unabhängig von den Entwicklungsdaten.
 

@@ -74,13 +74,15 @@ Paginierte, gefilterte Liste.
 | `priority` | string | `low`, `medium`, `high`, `critical` |
 | `assignee_id` | integer | Nur Tickets dieses Agenten |
 | `search` | string | Volltextsuche im Titel |
-| `per_page` | integer | Standard: 15 |
+| `per_page` | integer | Standard: 15, erlaubt: 1–100 |
 
 ---
 
 ### POST /tickets
 
 Erstellt ein neues Ticket, Status wird automatisch auf `open` gesetzt.
+Requester dürfen nur ein Asset verknüpfen, das ihnen aktuell zugewiesen ist;
+Admin und Agent dürfen jedes vorhandene Asset auswählen.
 
 **Request:**
 ```json
@@ -171,7 +173,7 @@ Requester sehen nur die ihnen aktuell zugewiesenen Assets. Anlegen/Bearbeiten/Zu
 | `category_id` | Nur Assets dieser Kategorie |
 | `status_id` | Nur Assets mit diesem Status |
 | `search` | Suche in Name, Asset-Tag, Seriennummer |
-| `per_page` | Standard: 15 |
+| `per_page` | Standard: 15, erlaubt: 1–100 |
 
 ---
 
@@ -249,7 +251,7 @@ Redaktioneller Workflow: **`draft → submitted → published → archived`**. R
 | `status` | `draft`, `submitted`, `published`, `archived` |
 | `tag` | Nur Artikel mit diesem Tag-Slug |
 | `search` | Suche in Titel und Inhalt |
-| `per_page` | Standard: 15 |
+| `per_page` | Standard: 15, erlaubt: 1–100 |
 
 ---
 
@@ -313,7 +315,11 @@ Löscht einen Artikel (Soft Delete). Admin darf jeden Artikel löschen, Agent nu
 
 ### GET /metrics
 
-*(Kein `/api/v1`-Präfix, keine Authentifizierung — für Prometheus-Scraping vorgesehen.)*
+*(Kein `/api/v1`-Präfix; separater Bearer-Token aus `METRICS_TOKEN` erforderlich.)*
+
+```http
+Authorization: Bearer <METRICS_TOKEN>
+```
 
 Liefert Kennzahlen im Prometheus-Textformat:
 

@@ -283,6 +283,9 @@ jobs:
           set_env_var SESSION_DRIVER redis
           set_env_var MAIL_HOST mailpit
           set_env_var MAIL_PORT 1025
+          metrics_token="$(openssl rand -hex 32)"
+          set_env_var METRICS_TOKEN "$metrics_token"
+          echo "METRICS_TOKEN=$metrics_token" >> "$GITHUB_ENV"
 
       - name: Create .env.docker
         run: |
@@ -331,7 +334,9 @@ jobs:
       - name: Verify the application actually responds
         run: |
           curl -fsS http://localhost/up
-          curl -fsS http://localhost/metrics | grep -q isd_tickets_by_status
+          curl -fsS \
+            -H "Authorization: Bearer ${METRICS_TOKEN}" \
+            http://localhost/metrics | grep -q isd_tickets_by_status
 
       - name: Show container logs on failure
         if: failure()
