@@ -94,9 +94,9 @@ class KbArticleTest extends TestCase
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('title', 'Neuer Artikel')
-            ->assertJsonPath('status.value', 'draft')
-            ->assertJsonPath('author.id', $agent->id);
+            ->assertJsonPath('data.title', 'Neuer Artikel')
+            ->assertJsonPath('data.status.value', 'draft')
+            ->assertJsonPath('data.author.id', $agent->id);
     }
 
     public function test_publishing_article_sets_published_at(): void
@@ -112,7 +112,7 @@ class KbArticleTest extends TestCase
         $response->assertCreated();
 
         $this->assertDatabaseMissing('kb_articles', [
-            'id' => $response->json('id'),
+            'id' => $response->json('data.id'),
             'published_at' => null,
         ]);
     }

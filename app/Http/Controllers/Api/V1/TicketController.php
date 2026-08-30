@@ -50,7 +50,7 @@ class TicketController extends Controller
             data: $request->validated(),
         );
 
-        return response()->json(new TicketResource($ticket), 201);
+        return (new TicketResource($ticket))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, int $id): TicketResource
@@ -105,7 +105,7 @@ class TicketController extends Controller
             file: $request->file('file'),
         );
 
-        return response()->json(new TicketAttachmentResource($attachment), 201);
+        return (new TicketAttachmentResource($attachment))->response()->setStatusCode(201);
     }
 
     /**

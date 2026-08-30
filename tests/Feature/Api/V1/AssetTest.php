@@ -86,8 +86,8 @@ class AssetTest extends TestCase
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('asset_tag', 'NB-999')
-            ->assertJsonPath('name', 'Test Laptop');
+            ->assertJsonPath('data.asset_tag', 'NB-999')
+            ->assertJsonPath('data.name', 'Test Laptop');
 
         $this->assertDatabaseHas('assets', ['asset_tag' => 'NB-999']);
     }

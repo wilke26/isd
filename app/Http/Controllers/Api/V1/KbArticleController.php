@@ -43,7 +43,7 @@ class KbArticleController extends Controller
 
         $article = $this->kbService->create($request->user(), $request->validated());
 
-        return response()->json(new KbArticleResource($article), 201);
+        return (new KbArticleResource($article))->response()->setStatusCode(201);
     }
 
     public function show(int $id): KbArticleResource

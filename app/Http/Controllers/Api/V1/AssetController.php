@@ -43,7 +43,7 @@ class AssetController extends Controller
 
         $asset = $this->assetService->create($request->validated());
 
-        return response()->json(new AssetResource($asset), 201);
+        return (new AssetResource($asset))->response()->setStatusCode(201);
     }
 
     public function show(int $id): AssetResource

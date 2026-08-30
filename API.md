@@ -1,5 +1,10 @@
 # API-Dokumentation
 
+> **Verbindlicher Portalvertrag:** [`openapi/portal-v1.json`](openapi/portal-v1.json)
+> ist die maschinenlesbare OpenAPI-3.1-Quelle für alle vom `isd-portal`
+> verwendeten Endpunkte. Diese Datei ist maßgeblich für generierte
+> TypeScript-Typen; die Beispiele in diesem Dokument dienen als Erläuterung.
+
 **Base URL:** `https://isd.local/api/v1`
 **Format:** JSON
 **Authentifizierung:** Bearer Token (Laravel Sanctum)
@@ -96,7 +101,7 @@ Admin und Agent dürfen jedes vorhandene Asset auswählen.
 }
 ```
 
-**Response 201:** Ticket-Objekt (ohne `data`-Wrapper).
+**Response 201:** Ticket-Objekt im einheitlichen `data`-Wrapper.
 
 ---
 
@@ -269,7 +274,7 @@ Erstellt einen Artikel. Jeder authentifizierte Benutzer darf einen **Entwurf** a
 }
 ```
 
-**Response 201:** Artikel-Objekt (ohne `data`-Wrapper).
+**Response 201:** Artikel-Objekt im einheitlichen `data`-Wrapper.
 
 ---
 
