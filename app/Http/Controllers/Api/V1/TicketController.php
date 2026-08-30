@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ListTicketsRequest;
 use App\Http\Requests\Api\StoreTicketAttachmentRequest;
+use App\Http\Requests\Api\StoreTicketCommentRequest;
 use App\Http\Requests\Api\StoreTicketRequest;
 use App\Http\Requests\Api\UpdateTicketRequest;
 use App\Http\Resources\Api\TicketAttachmentResource;
@@ -71,13 +72,8 @@ class TicketController extends Controller
         );
     }
 
-    public function addComment(Request $request, int $id): JsonResponse
+    public function addComment(StoreTicketCommentRequest $request, int $id): JsonResponse
     {
-        $request->validate([
-            'body' => ['required', 'string'],
-            'is_internal' => ['boolean'],
-        ]);
-
         $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $isInternal = $request->boolean('is_internal');
 

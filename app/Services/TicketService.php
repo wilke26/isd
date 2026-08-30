@@ -250,7 +250,10 @@ class TicketService
             'user_id' => $uploader->id,
             'filename' => $file->getClientOriginalName(),
             'path' => $storedPath,
-            'mime_type' => $file->getClientMimeType(),
+            // getMimeType() uses PHP's Fileinfo extension to inspect the
+            // actual bytes. getClientMimeType() merely repeats the
+            // user-controlled Content-Type header and must not be trusted.
+            'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
             'size' => $file->getSize(),
         ]);
     }
