@@ -21,13 +21,16 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Restricted to the Vite dev server for isd-portal (localhost:5173 is
-    // Vite's default port) instead of the wildcard default — not strictly
-    // required for token-based auth (no credentials cross the origin
-    // boundary), but keeps this in line with the project's general
-    // preference for explicit over broad permissions. Adjust here once
-    // isd-portal is actually scaffolded, in case the port differs.
-    'allowed_origins' => ['http://localhost:5173'],
+    // Explicit comma-separated origins keep production deploys configurable
+    // without falling back to a wildcard. Values must be full browser origins
+    // (scheme + host + optional port), without paths or trailing slashes.
+    'allowed_origins' => array_values(array_filter(
+        array_map(
+            static fn (string $origin): string => trim($origin),
+            explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
+        ),
+        static fn (string $origin): bool => $origin !== '',
+    )),
 
     'allowed_origins_patterns' => [],
 
