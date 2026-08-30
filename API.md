@@ -23,6 +23,12 @@ Content-Type: application/json
 
 Jede Anfrage erhält zusätzlich eine **Request-ID** im Response-Header `X-Request-Id` — nützlich zur Korrelation mit den strukturierten Logs (siehe [Observability](README.md#observability)).
 
+### Autorisierungssemantik
+
+- `401 Unauthorized`: Es fehlt eine gültige Anmeldung oder der Token ist abgelaufen.
+- `403 Forbidden`: Die Ressource ist für den Benutzer sichtbar, die konkrete Aktion ist jedoch nicht erlaubt (beispielsweise interne Kommentare oder Asset-Historien für Requester).
+- `404 Not Found`: Die Ressource existiert nicht **oder liegt außerhalb des Sichtbarkeitsbereichs des Benutzers**. Dadurch lassen sich fremde Ticket-, Asset- und private Artikel-IDs nicht enumerieren.
+
 ---
 
 ### POST /auth/login

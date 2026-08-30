@@ -13,6 +13,7 @@ use App\Http\Resources\Api\KbArticleResource;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -46,9 +47,9 @@ class KbArticleController extends Controller
         return (new KbArticleResource($article))->response()->setStatusCode(201);
     }
 
-    public function show(int $id): KbArticleResource
+    public function show(Request $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('view', $article);
 
         return new KbArticleResource($article);
@@ -56,15 +57,15 @@ class KbArticleController extends Controller
 
     public function update(UpdateKbArticleRequest $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('update', $article);
 
         return new KbArticleResource($this->kbService->update($article, $request->validated()));
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('delete', $article);
 
         $article->delete();
@@ -73,27 +74,27 @@ class KbArticleController extends Controller
     }
 
     /** Submit a draft for editorial review (author, only from draft) */
-    public function submit(int $id): KbArticleResource
+    public function submit(Request $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('submit', $article);
 
         return new KbArticleResource($this->kbService->submit($article));
     }
 
     /** Publish (staff, from submitted/draft) */
-    public function publish(int $id): KbArticleResource
+    public function publish(Request $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('publish', $article);
 
         return new KbArticleResource($this->kbService->publish($article));
     }
 
     /** Archive (staff, from published) */
-    public function archive(int $id): KbArticleResource
+    public function archive(Request $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('archive', $article);
 
         return new KbArticleResource($this->kbService->archive($article));
@@ -106,7 +107,7 @@ class KbArticleController extends Controller
      */
     public function addAddendum(AddKbArticleAddendumRequest $request, int $id): KbArticleResource
     {
-        $article = $this->kbService->findOrFail($id);
+        $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('addAddendum', $article);
 
         return new KbArticleResource(

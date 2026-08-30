@@ -44,6 +44,26 @@ class KbArticleService
     }
 
     /**
+     * Resolve an article inside the caller's visibility boundary. Non-staff
+     * users may resolve published articles and their own work; private work
+     * owned by somebody else is deliberately indistinguishable from a missing
+     * article.
+     */
+    public function findVisibleToOrFail(User $user, int $id): KbArticle
+    {
+        $isStaff = $user->hasRole('admin') || $user->hasRole('agent');
+
+        return KbArticle::with(['author', 'category', 'tags'])
+            ->when(! $isStaff, function ($query) use ($user) {
+                $query->where(function ($visibilityQuery) use ($user) {
+                    $visibilityQuery->where('status', ArticleStatus::Published)
+                        ->orWhere('author_id', $user->id);
+                });
+            })
+            ->findOrFail($id);
+    }
+
+    /**
      * Creates an article. Non-staff users can only create drafts — a direct
      * publish that bypasses the editorial workflow is not possible for
      * them, regardless of what is sent in the request.

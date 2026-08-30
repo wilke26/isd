@@ -397,7 +397,7 @@ class TicketTest extends TestCase
 
         $response = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file]);
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     }
 
     public function test_staff_can_upload_attachment_to_any_ticket(): void
@@ -461,7 +461,7 @@ class TicketTest extends TestCase
 
         $response = $this->deleteJson("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     }
 
     public function test_attachment_upload_rejects_invalid_file_type(): void
