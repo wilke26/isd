@@ -19,6 +19,17 @@ use Illuminate\Validation\ValidationException;
 
 class TicketService
 {
+    /** @var list<string> */
+    private const DETAIL_RELATIONS = [
+        'requester',
+        'assignee',
+        'category',
+        'asset',
+        'comments.user',
+        'attachments',
+        'history.user',
+    ];
+
     /**
      * Filtered, paginated ticket list.
      * Agents see all tickets, normal users only their own.
@@ -40,15 +51,25 @@ class TicketService
 
     public function findOrFail(int $id): Ticket
     {
-        return Ticket::with([
-            'requester',
-            'assignee',
-            'category',
-            'asset',
-            'comments.user',
-            'attachments',
-            'history.user',
-        ])->findOrFail($id);
+        return Ticket::with(self::DETAIL_RELATIONS)->findOrFail($id);
+    }
+
+    /**
+     * Resolve a ticket inside the caller's visibility boundary.
+     *
+     * A requester must not be able to enumerate foreign ticket IDs by
+     * distinguishing an authorization response from a missing record. Staff
+     * retain their global support view; all other users get a 404 for tickets
+     * they do not own.
+     */
+    public function findVisibleToOrFail(User $user, int $id): Ticket
+    {
+        return Ticket::with(self::DETAIL_RELATIONS)
+            ->when(
+                ! $user->hasRole('admin') && ! $user->hasRole('agent'),
+                fn ($query) => $query->where('requester_id', $user->id),
+            )
+            ->findOrFail($id);
     }
 
     /**

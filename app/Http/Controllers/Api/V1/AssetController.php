@@ -46,9 +46,9 @@ class AssetController extends Controller
         return (new AssetResource($asset))->response()->setStatusCode(201);
     }
 
-    public function show(int $id): AssetResource
+    public function show(Request $request, int $id): AssetResource
     {
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('view', $asset);
 
         return new AssetResource($asset);
@@ -56,15 +56,15 @@ class AssetController extends Controller
 
     public function update(UpdateAssetRequest $request, int $id): AssetResource
     {
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('update', $asset);
 
         return new AssetResource($this->assetService->update($asset, $request->validated()));
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('delete', $asset);
 
         $this->assetService->delete($asset);
@@ -78,7 +78,7 @@ class AssetController extends Controller
             'user_id' => ['required', 'exists:users,id'],
         ]);
 
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('assign', $asset);
 
         $user = User::findOrFail($request->integer('user_id'));
@@ -88,9 +88,9 @@ class AssetController extends Controller
         return response()->json(['message' => "Asset {$asset->asset_tag} wurde {$user->name} zugewiesen."]);
     }
 
-    public function unassign(int $id): JsonResponse
+    public function unassign(Request $request, int $id): JsonResponse
     {
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         // No dedicated 'unassign' ability — whoever may assign may also
         // release, both are the same staff-only operation.
         $this->authorize('assign', $asset);
@@ -100,9 +100,9 @@ class AssetController extends Controller
         return response()->json(['message' => "Zuweisung für {$asset->asset_tag} aufgehoben."]);
     }
 
-    public function history(int $id): JsonResponse
+    public function history(Request $request, int $id): JsonResponse
     {
-        $asset = $this->assetService->findOrFail($id);
+        $asset = $this->assetService->findVisibleToOrFail($request->user(), $id);
         // Own ability instead of 'view' — the history also shows previous
         // owners by name, which a requester may not see, even if the asset
         // is currently assigned to them.

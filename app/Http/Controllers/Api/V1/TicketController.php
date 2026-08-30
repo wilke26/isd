@@ -55,7 +55,7 @@ class TicketController extends Controller
 
     public function show(Request $request, int $id): TicketResource
     {
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('view', $ticket);
 
         return new TicketResource($ticket);
@@ -63,7 +63,7 @@ class TicketController extends Controller
 
     public function update(UpdateTicketRequest $request, int $id): TicketResource
     {
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('update', $ticket);
 
         return new TicketResource(
@@ -78,7 +78,7 @@ class TicketController extends Controller
             'is_internal' => ['boolean'],
         ]);
 
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $isInternal = $request->boolean('is_internal');
 
         $this->authorize($isInternal ? 'commentInternally' : 'commentPublicly', $ticket);
@@ -96,7 +96,7 @@ class TicketController extends Controller
     /** Attach a file to a ticket (staff or the ticket's own requester) */
     public function storeAttachment(StoreTicketAttachmentRequest $request, int $id): JsonResponse
     {
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('addAttachment', $ticket);
 
         $attachment = $this->ticketService->addAttachment(
@@ -112,9 +112,9 @@ class TicketController extends Controller
      * Download a file — permission follows the visibility of the ticket
      * itself (no separate "internal" concept for attachments).
      */
-    public function downloadAttachment(int $id, int $attachmentId): StreamedResponse
+    public function downloadAttachment(Request $request, int $id, int $attachmentId): StreamedResponse
     {
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('view', $ticket);
 
         $attachment = TicketAttachment::where('ticket_id', $ticket->id)->findOrFail($attachmentId);
@@ -123,9 +123,9 @@ class TicketController extends Controller
     }
 
     /** Delete attachment — staff or whoever uploaded it themselves */
-    public function destroyAttachment(int $id, int $attachmentId): JsonResponse
+    public function destroyAttachment(Request $request, int $id, int $attachmentId): JsonResponse
     {
-        $ticket = $this->ticketService->findOrFail($id);
+        $ticket = $this->ticketService->findVisibleToOrFail($request->user(), $id);
         $attachment = TicketAttachment::where('ticket_id', $ticket->id)->findOrFail($attachmentId);
 
         // Array form: the ticket coming first drives the policy resolution

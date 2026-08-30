@@ -8,6 +8,7 @@ use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +49,29 @@ class AssetService
      */
     public function findOrFail(int $id): Asset
     {
-        return Asset::with([
+        return $this->detailQuery()->findOrFail($id);
+    }
+
+    /**
+     * Resolve an asset inside the caller's visibility boundary. Requesters
+     * receive a 404 for assets not currently assigned to them, preventing ID
+     * enumeration while preserving the unrestricted staff view.
+     */
+    public function findVisibleToOrFail(User $user, int $id): Asset
+    {
+        return $this->detailQuery()
+            ->when(! $this->isStaff($user), function ($query) use ($user) {
+                $query->whereHas('assignments', function ($assignmentQuery) use ($user) {
+                    $assignmentQuery->where('user_id', $user->id)->whereNull('returned_at');
+                });
+            })
+            ->findOrFail($id);
+    }
+
+    /** @return Builder<Asset> */
+    private function detailQuery(): Builder
+    {
+        return Asset::query()->with([
             'category',
             'status',
             'parent',
@@ -60,7 +83,12 @@ class AssetService
             // here).
             'currentAssignment.user',
             'licenseAssignments.license',
-        ])->findOrFail($id);
+        ]);
+    }
+
+    private function isStaff(User $user): bool
+    {
+        return $user->hasRole('admin') || $user->hasRole('agent');
     }
 
     /**
