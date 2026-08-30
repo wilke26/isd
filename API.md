@@ -23,6 +23,11 @@ Content-Type: application/json
 
 Jede Anfrage erhält zusätzlich eine **Request-ID** im Response-Header `X-Request-Id` — nützlich zur Korrelation mit den strukturierten Logs (siehe [Observability](README.md#observability)).
 
+Authentifizierte Endpunkte sind pro Benutzer auf standardmäßig 120 Anfragen
+pro Minute begrenzt. Der Wert kann über `API_RATE_LIMIT_PER_MINUTE` angepasst
+werden. Bei Überschreitung antwortet die API mit `429 Too Many Requests` und
+den üblichen `Retry-After`-/Rate-Limit-Headern.
+
 ### Autorisierungssemantik
 
 - `401 Unauthorized`: Es fehlt eine gültige Anmeldung oder der Token ist abgelaufen.

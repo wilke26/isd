@@ -387,6 +387,39 @@ class TicketTest extends TestCase
         ]);
     }
 
+    public function test_attachment_mime_type_is_detected_from_content_not_client_header(): void
+    {
+        Storage::fake('local');
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+        Sanctum::actingAs($requester);
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'isd-upload-');
+        $this->assertNotFalse($temporaryPath);
+        file_put_contents($temporaryPath, 'Plain text incident evidence.');
+
+        // A real UploadedFile (rather than Laravel's fake file) keeps the
+        // client-provided header separate from Fileinfo's content detection.
+        $file = new UploadedFile(
+            $temporaryPath,
+            'evidence.txt',
+            'application/x-msdownload',
+            null,
+            true,
+        );
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])
+            ->assertCreated()
+            ->assertJsonPath('data.mime_type', 'text/plain');
+
+        $this->assertDatabaseHas('ticket_attachments', [
+            'ticket_id' => $ticket->id,
+            'filename' => 'evidence.txt',
+            'mime_type' => 'text/plain',
+        ]);
+    }
+
     public function test_requester_cannot_upload_attachment_to_others_ticket(): void
     {
         Storage::fake('local');

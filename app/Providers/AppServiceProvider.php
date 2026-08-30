@@ -30,11 +30,27 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $key = strtolower((string) $request->input('email')) . '|' . $request->ip();
 
-            return Limit::perMinute(5)->by($key)->response(function () {
+            return Limit::perMinute(5)->by($key)->response(function (Request $request, array $headers) {
                 return response()->json([
                     'message' => 'Zu viele Login-Versuche. Bitte versuche es in Kürze erneut.',
-                ], 429);
+                ], 429, $headers);
             });
+        });
+
+        // Protect every authenticated API consumer independently. A user ID
+        // is stable across changing client IPs and prevents one noisy portal
+        // session from consuming the allowance of unrelated users behind the
+        // same corporate proxy.
+        RateLimiter::for('api', function (Request $request) {
+            $userId = $request->user()?->getAuthIdentifier();
+
+            return Limit::perMinute((int) config('api.rate_limit_per_minute'))
+                ->by($userId !== null ? "user:{$userId}" : "ip:{$request->ip()}")
+                ->response(function (Request $request, array $headers) {
+                    return response()->json([
+                        'message' => 'Zu viele API-Anfragen. Bitte versuche es in Kürze erneut.',
+                    ], 429, $headers);
+                });
         });
     }
 }
