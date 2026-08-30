@@ -92,6 +92,25 @@ set_env_var MAIL_HOST mailpit
 set_env_var MAIL_PORT 1025
 ```
 
+`CORS_ALLOWED_ORIGINS` enthält eine kommaseparierte Allowlist der Portal-
+Origins. Für die lokale Entwicklung ist `http://localhost:5173` voreingestellt.
+Bei einem produktiven Portal muss die vollständige Origin ohne Pfad und ohne
+abschließenden Slash eingetragen werden, beispielsweise:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://portal.example.com
+```
+
+Mehrere explizite Origins sind möglich:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://portal.example.com,https://portal-staging.example.com
+```
+
+`localhost` und `127.0.0.1` gelten im Browser als unterschiedliche Origins.
+Nach einer Änderung bei aktivem Laravel-Konfigurationscache muss dieser mit
+`php artisan config:clear` geleert beziehungsweise neu aufgebaut werden.
+
 Kurz prüfen, ob alles wie erwartet gesetzt ist:
 
 ```bash
