@@ -15,6 +15,12 @@ class AssetAssignment extends Model
 {
     use HasFactory;
 
+    /** @var list<string> */
+    protected $hidden = [
+        // Internal generated column used solely for the database constraint.
+        'active_asset_id',
+    ];
+
     protected $fillable = [
         'asset_id',
         'user_id',

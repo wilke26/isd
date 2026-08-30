@@ -230,7 +230,7 @@ Löscht ein Asset (Soft Delete). **Nur Admin.**
 
 ### POST /assets/{id}/assign
 
-Weist ein Asset einem Benutzer zu (Admin/Agent). Eine bestehende aktive Zuweisung wird automatisch beendet — die Operation ist gegen parallele Zuweisungsversuche gesperrt (`lockForUpdate`), es kann nie zwei gleichzeitig aktive Zuweisungen geben.
+Weist ein Asset einem Benutzer zu (Admin/Agent). Eine bestehende aktive Zuweisung wird automatisch beendet — die Operation ist gegen parallele Zuweisungsversuche gesperrt (`lockForUpdate`) und zusätzlich durch einen Unique Constraint abgesichert. Dadurch kann es auch bei direkten Datenbankzugriffen nie zwei gleichzeitig aktive Zuweisungen geben.
 
 ```json
 { "user_id": 4 }

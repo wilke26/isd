@@ -27,7 +27,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 ### Asset-Management
 - Verwaltung von Geräten, Servern, Lizenzen und Netzwerkinfrastruktur
 - Hierarchische Asset-Kategorien (z. B. Hardware → Laptops)
-- Vollständige Zuweisungshistorie, gegen Parallelzugriffe gesperrt (nie zwei aktive Zuweisungen gleichzeitig)
+- Vollständige Zuweisungshistorie, gegen Parallelzugriffe gesperrt und zusätzlich durch einen Datenbank-Constraint abgesichert (nie zwei aktive Zuweisungen gleichzeitig)
 - Lizenz-Tracking mit Sitzplatzkontingent und Ablaufdatum
 - Rollenbasierter Zugriff: Requester sehen nur die ihnen zugewiesenen Assets
 
