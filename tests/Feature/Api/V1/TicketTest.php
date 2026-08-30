@@ -103,9 +103,9 @@ class TicketTest extends TestCase
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('title', 'Mein Laptop startet nicht')
-            ->assertJsonPath('status.value', 'open')
-            ->assertJsonPath('requester.id', $user->id);
+            ->assertJsonPath('data.title', 'Mein Laptop startet nicht')
+            ->assertJsonPath('data.status.value', 'open')
+            ->assertJsonPath('data.requester.id', $user->id);
 
         $this->assertDatabaseHas('tickets', [
             'title' => 'Mein Laptop startet nicht',
@@ -135,7 +135,7 @@ class TicketTest extends TestCase
         $response->assertCreated();
 
         $this->assertDatabaseHas('ticket_history', [
-            'ticket_id' => $response->json('id'),
+            'ticket_id' => $response->json('data.id'),
             'field' => 'status',
             'new_value' => 'open',
         ]);
@@ -157,9 +157,9 @@ class TicketTest extends TestCase
             'asset_id' => $asset->id,
         ]);
 
-        $response->assertCreated()->assertJsonPath('asset.id', $asset->id);
+        $response->assertCreated()->assertJsonPath('data.asset.id', $asset->id);
         $this->assertDatabaseHas('tickets', [
-            'id' => $response->json('id'),
+            'id' => $response->json('data.id'),
             'asset_id' => $asset->id,
             'requester_id' => $requester->id,
         ]);
@@ -201,7 +201,7 @@ class TicketTest extends TestCase
             'asset_id' => $asset->id,
         ])
             ->assertCreated()
-            ->assertJsonPath('asset.id', $asset->id);
+            ->assertJsonPath('data.asset.id', $asset->id);
     }
 
     // ─── Show ─────────────────────────────────────────────────────
@@ -422,7 +422,7 @@ class TicketTest extends TestCase
 
         Sanctum::actingAs($requester);
         $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
-        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('data.id');
 
         $response = $this->get("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
 
@@ -438,7 +438,7 @@ class TicketTest extends TestCase
 
         Sanctum::actingAs($requester);
         $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
-        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('data.id');
 
         $response = $this->deleteJson("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}");
 
@@ -455,7 +455,7 @@ class TicketTest extends TestCase
 
         Sanctum::actingAs($uploader);
         $file = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
-        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('id');
+        $attachmentId = $this->postJson("/api/v1/tickets/{$ticket->id}/attachments", ['file' => $file])->json('data.id');
 
         Sanctum::actingAs(User::factory()->create());
 

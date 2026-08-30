@@ -1,0 +1,346 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ISD Portal API",
+    "version": "1.0.0",
+    "description": "Contract for the endpoints consumed by isd-portal. The backend repository is the source of truth."
+  },
+  "servers": [{ "url": "https://isd.local/api/v1" }],
+  "security": [{ "sanctumToken": [] }],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": {
+          "200": { "description": "Authenticated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } } } },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "responses": {
+          "200": { "description": "Logged out", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": { "description": "Current user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" }
+        }
+      }
+    },
+    "/tickets": {
+      "get": {
+        "operationId": "listTickets",
+        "parameters": [
+          { "$ref": "#/components/parameters/TicketStatus" },
+          { "$ref": "#/components/parameters/TicketPriority" },
+          { "name": "assignee_id", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "$ref": "#/components/parameters/Search" },
+          { "$ref": "#/components/parameters/PerPage" }
+        ],
+        "responses": {
+          "200": { "description": "Paginated tickets", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TicketCollection" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      },
+      "post": {
+        "operationId": "createTicket",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTicketRequest" } } } },
+        "responses": {
+          "201": { "description": "Created ticket", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TicketResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/tickets/{id}": {
+      "get": {
+        "operationId": "getTicket",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }],
+        "responses": {
+          "200": { "description": "Ticket detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TicketDetailResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/tickets/{id}/comments": {
+      "post": {
+        "operationId": "addTicketComment",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddCommentRequest" } } } },
+        "responses": {
+          "201": { "description": "Comment created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/assets": {
+      "get": {
+        "operationId": "listAssets",
+        "parameters": [
+          { "name": "category_id", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "status_id", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "$ref": "#/components/parameters/Search" },
+          { "$ref": "#/components/parameters/PerPage" }
+        ],
+        "responses": {
+          "200": { "description": "Paginated assets", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssetCollection" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/kb/articles": {
+      "get": {
+        "operationId": "listKbArticles",
+        "parameters": [
+          { "name": "category_id", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/ArticleStatus" } },
+          { "name": "tag", "in": "query", "schema": { "type": "string", "maxLength": 100 } },
+          { "$ref": "#/components/parameters/Search" },
+          { "$ref": "#/components/parameters/PerPage" }
+        ],
+        "responses": {
+          "200": { "description": "Paginated articles", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KbArticleCollection" } } } },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sanctumToken": { "type": "http", "scheme": "bearer", "bearerFormat": "Laravel Sanctum" }
+    },
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } },
+      "Search": { "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } },
+      "PerPage": { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 15 } },
+      "TicketStatus": { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/TicketStatus" } },
+      "TicketPriority": { "name": "priority", "in": "query", "schema": { "$ref": "#/components/schemas/TicketPriority" } }
+    },
+    "responses": {
+      "Unauthenticated": { "description": "Unauthenticated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "ValidationError": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ValidationError" } } } }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["token", "user"],
+        "properties": {
+          "token": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "email"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["message"],
+        "properties": { "message": { "type": "string" } }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["message"],
+        "properties": { "message": { "type": "string" } }
+      },
+      "ValidationError": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Error" },
+          {
+            "type": "object",
+            "required": ["errors"],
+            "properties": {
+              "errors": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } }
+            }
+          }
+        ]
+      },
+      "TicketStatus": { "type": "string", "enum": ["open", "in_progress", "waiting_for_requester", "resolved", "closed"] },
+      "TicketPriority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+      "ArticleStatus": { "type": "string", "enum": ["draft", "submitted", "published", "archived"] },
+      "EnumPresentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "label", "color"],
+        "properties": {
+          "value": { "type": "string" },
+          "label": { "type": "string" },
+          "color": { "type": "string" }
+        }
+      },
+      "Category": {
+        "type": ["object", "null"],
+        "required": ["id", "name"],
+        "properties": { "id": { "type": "integer" }, "name": { "type": "string" } }
+      },
+      "AssetReference": {
+        "type": ["object", "null"],
+        "required": ["id", "asset_tag", "name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "asset_tag": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "required": ["id", "title", "description", "status", "priority", "requester", "assignee", "category", "asset", "due_at", "resolved_at", "closed_at", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "allOf": [{ "$ref": "#/components/schemas/EnumPresentation" }], "properties": { "value": { "$ref": "#/components/schemas/TicketStatus" } } },
+          "priority": { "allOf": [{ "$ref": "#/components/schemas/EnumPresentation" }], "properties": { "value": { "$ref": "#/components/schemas/TicketPriority" } } },
+          "requester": { "$ref": "#/components/schemas/User" },
+          "assignee": { "oneOf": [{ "$ref": "#/components/schemas/User" }, { "type": "null" }] },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "asset": { "$ref": "#/components/schemas/AssetReference" },
+          "due_at": { "type": ["string", "null"], "format": "date-time" },
+          "resolved_at": { "type": ["string", "null"], "format": "date-time" },
+          "closed_at": { "type": ["string", "null"], "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TicketComment": {
+        "type": "object",
+        "required": ["id", "body", "is_internal", "user", "created_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "body": { "type": "string" },
+          "is_internal": { "type": "boolean" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TicketDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Ticket" },
+          {
+            "type": "object",
+            "required": ["comments"],
+            "properties": { "comments": { "type": "array", "items": { "$ref": "#/components/schemas/TicketComment" } } }
+          }
+        ]
+      },
+      "CreateTicketRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "description"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string" },
+          "priority": { "$ref": "#/components/schemas/TicketPriority" },
+          "category_id": { "type": ["integer", "null"] },
+          "asset_id": { "type": ["integer", "null"] },
+          "due_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "AddCommentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["body"],
+        "properties": {
+          "body": { "type": "string" },
+          "is_internal": { "type": "boolean", "default": false }
+        }
+      },
+      "TicketResponse": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Ticket" } } },
+      "TicketDetailResponse": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/TicketDetail" } } },
+      "PaginationLinks": {
+        "type": "object",
+        "required": ["first", "last", "prev", "next"],
+        "properties": {
+          "first": { "type": ["string", "null"] }, "last": { "type": ["string", "null"] },
+          "prev": { "type": ["string", "null"] }, "next": { "type": ["string", "null"] }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "required": ["current_page", "last_page", "per_page", "total"],
+        "properties": {
+          "current_page": { "type": "integer" }, "last_page": { "type": "integer" },
+          "per_page": { "type": "integer" }, "total": { "type": "integer" }
+        }
+      },
+      "TicketCollection": {
+        "type": "object", "required": ["data", "links", "meta"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Ticket" } },
+          "links": { "$ref": "#/components/schemas/PaginationLinks" }, "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "required": ["id", "asset_tag", "name", "serial_number", "manufacturer", "model", "purchased_at", "warranty_until", "notes", "category", "status", "current_assignment", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" }, "asset_tag": { "type": "string" }, "name": { "type": "string" },
+          "serial_number": { "type": ["string", "null"] }, "manufacturer": { "type": ["string", "null"] }, "model": { "type": ["string", "null"] },
+          "purchased_at": { "type": ["string", "null"], "format": "date" }, "warranty_until": { "type": ["string", "null"], "format": "date" },
+          "notes": { "type": ["string", "null"] }, "category": { "$ref": "#/components/schemas/Category" },
+          "status": { "type": ["object", "null"], "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "color": { "type": "string" } } },
+          "current_assignment": { "type": ["object", "null"], "properties": { "user": { "$ref": "#/components/schemas/User" }, "assigned_at": { "type": "string", "format": "date-time" } } },
+          "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AssetCollection": {
+        "type": "object", "required": ["data", "links", "meta"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Asset" } }, "links": { "$ref": "#/components/schemas/PaginationLinks" }, "meta": { "$ref": "#/components/schemas/PaginationMeta" } }
+      },
+      "KbArticle": {
+        "type": "object",
+        "required": ["id", "title", "slug", "body", "addendum", "status", "author", "category", "tags", "published_at", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" }, "title": { "type": "string" }, "slug": { "type": "string" }, "body": { "type": "string" }, "addendum": { "type": ["string", "null"] },
+          "status": { "type": "object", "required": ["value", "label"], "properties": { "value": { "$ref": "#/components/schemas/ArticleStatus" }, "label": { "type": "string" } } },
+          "author": { "$ref": "#/components/schemas/User" },
+          "category": { "oneOf": [{ "type": "object", "required": ["id", "name", "slug"], "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] },
+          "tags": { "type": "array", "items": { "type": "object", "required": ["id", "name", "slug"], "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "slug": { "type": "string" } } },
+          "published_at": { "type": ["string", "null"], "format": "date-time" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+      },
+      "KbArticleCollection": {
+        "type": "object", "required": ["data", "links", "meta"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/KbArticle" } }, "links": { "$ref": "#/components/schemas/PaginationLinks" }, "meta": { "$ref": "#/components/schemas/PaginationMeta" } }
+      }
+    }
+  }
+}

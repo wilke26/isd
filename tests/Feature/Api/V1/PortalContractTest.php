@@ -26,11 +26,11 @@ class PortalContractTest extends TestCase
             'description' => 'Die Verbindung wird sofort getrennt.',
         ])
             ->assertCreated()
-            ->assertJsonPath('title', 'VPN funktioniert nicht')
-            ->assertJsonPath('status.value', 'open')
-            ->assertJsonPath('status.label', 'Offen');
+            ->assertJsonPath('data.title', 'VPN funktioniert nicht')
+            ->assertJsonPath('data.status.value', 'open')
+            ->assertJsonPath('data.status.label', 'Offen');
 
-        $ticketId = $created->json('id');
+        $ticketId = $created->json('data.id');
 
         $this->getJson('/api/v1/tickets')
             ->assertOk()
