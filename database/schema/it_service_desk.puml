@@ -107,7 +107,6 @@ TABLE(licenses, "licenses") {
   product: varchar(255)
   license_key: text NULL
   seats_total: int unsigned
-  seats_used: int unsigned DEFAULT 0
   expires_at: date NULL
   created_at: timestamp
   updated_at: timestamp

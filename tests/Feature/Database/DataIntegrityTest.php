@@ -6,6 +6,8 @@ namespace Tests\Feature\Database;
 
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Models\License;
+use App\Models\LicenseAssignment;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,5 +62,57 @@ class DataIntegrityTest extends TestCase
         $this->assertContains('tickets_requester_created_index', $indexNames('tickets'));
         $this->assertContains('kb_articles_status_published_index', $indexNames('kb_articles'));
         $this->assertNotContains('kb_articles_slug_index', $indexNames('kb_articles'));
+        $this->assertContains('license_assignments_license_user_unique', $indexNames('license_assignments'));
+        $this->assertContains('license_assignments_license_asset_unique', $indexNames('license_assignments'));
+    }
+
+    public function test_database_rejects_duplicate_license_assignment_for_a_user(): void
+    {
+        $license = License::factory()->create();
+        $user = User::factory()->create();
+
+        LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_deleting_a_user_releases_the_assigned_license_seat(): void
+    {
+        $license = License::factory()->create(['seats_total' => 1]);
+        $user = User::factory()->create();
+        $assignment = LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => $user->id,
+            'asset_id' => null,
+        ]);
+
+        $user->delete();
+
+        $this->assertDatabaseMissing('license_assignments', ['id' => $assignment->id]);
+        $this->assertSame(0, $license->seatsUsed());
+    }
+
+    public function test_soft_deleting_an_asset_releases_the_assigned_license_seat(): void
+    {
+        $license = License::factory()->create(['seats_total' => 1]);
+        $asset = Asset::factory()->create();
+        $assignment = LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => null,
+            'asset_id' => $asset->id,
+        ]);
+
+        $asset->delete();
+
+        $this->assertDatabaseMissing('license_assignments', ['id' => $assignment->id]);
+        $this->assertSame(0, $license->seatsUsed());
     }
 }
