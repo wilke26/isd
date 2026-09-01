@@ -28,9 +28,6 @@ services:
       - composer-cache:/tmp/composer-cache
       - vendor-data:/app/vendor
       - node-modules-data:/app/node_modules
-      # Private Anhänge liegen nicht im Container-Layer und überleben einen
-      # Image-/Container-Austausch. Niemals unter public/ mounten.
-      - ticket-attachments-data:/app/storage/app/private
       - caddy-data:/data
       - caddy-config:/config
     environment:
@@ -166,6 +163,5 @@ volumes:
   composer-cache:
   vendor-data:
   node-modules-data:
-  ticket-attachments-data:
   caddy-data:
   caddy-config:

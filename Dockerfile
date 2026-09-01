@@ -81,8 +81,8 @@ RUN groupadd -g ${USER_GID} appuser 2>/dev/null || true \
 # `composer install` (vendor/node_modules) noch Caddys PKI-Root-CA (/data)
 # darin ablegen — das Symptom ist ein Crash-Loop direkt nach dem allerersten
 # `docker compose up` auf einem frischen Checkout.
-RUN mkdir -p /app/vendor /app/node_modules /app/storage/app/private /tmp/composer-cache /data /config \
-    && chown -R ${USER_UID}:${USER_GID} /app/vendor /app/node_modules /app/storage /tmp/composer-cache /data /config
+RUN mkdir -p /app/vendor /app/node_modules /tmp/composer-cache /data /config \
+    && chown -R ${USER_UID}:${USER_GID} /app/vendor /app/node_modules /tmp/composer-cache /data /config
 
 # FrankenPHP/Caddy muss weiterhin an die privilegierten Ports 80/443 binden
 # können, obwohl der Container künftig nicht mehr als root läuft. Statt

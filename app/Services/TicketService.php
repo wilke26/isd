@@ -277,7 +277,16 @@ class TicketService
     /** Removes both the file from disk and the DB record. */
     public function deleteAttachment(TicketAttachment $attachment): void
     {
-        Storage::disk($attachment->disk)->delete($attachment->path);
+        $deleted = Storage::disk($attachment->disk)->delete($attachment->path);
+
+        if (! $deleted) {
+            // Remote disks configured with `throw: false` report transient
+            // network or permission failures through the return value. Keep
+            // the row as the authoritative reference so deletion can be
+            // retried instead of silently orphaning the object.
+            throw new RuntimeException('Der Ticket-Anhang konnte nicht aus dem Speicher gelöscht werden.');
+        }
+
         $attachment->delete();
     }
 

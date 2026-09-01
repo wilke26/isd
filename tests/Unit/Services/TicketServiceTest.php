@@ -7,9 +7,14 @@ namespace Tests\Unit\Services;
 use App\Enums\TicketStatus;
 use App\Exceptions\InvalidTicketStatusTransitionException;
 use App\Models\Ticket;
+use App\Models\TicketAttachment;
 use App\Models\User;
 use App\Services\TicketService;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class TicketServiceTest extends TestCase
@@ -22,6 +27,40 @@ class TicketServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = new TicketService;
+    }
+
+    public function test_attachment_row_is_retained_when_remote_deletion_returns_false(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $uploader = User::factory()->create();
+        $attachment = TicketAttachment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $uploader->id,
+            'filename' => 'evidence.pdf',
+            'disk' => 's3',
+            'path' => "ticket-attachments/{$ticket->id}/random-name.pdf",
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        $remoteDisk = Mockery::mock(FilesystemAdapter::class);
+        $remoteDisk->shouldReceive('delete')
+            ->once()
+            ->with($attachment->path)
+            ->andReturnFalse();
+        Storage::shouldReceive('disk')->once()->with('s3')->andReturn($remoteDisk);
+
+        try {
+            $this->service->deleteAttachment($attachment);
+            $this->fail('A failed remote deletion must abort database deletion.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Der Ticket-Anhang konnte nicht aus dem Speicher gelöscht werden.',
+                $exception->getMessage(),
+            );
+        }
+
+        $this->assertDatabaseHas('ticket_attachments', ['id' => $attachment->id]);
     }
 
     public function test_create_sets_requester_and_open_status(): void

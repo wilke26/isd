@@ -112,10 +112,12 @@ Nach einer Änderung bei aktivem Laravel-Konfigurationscache muss dieser mit
 `php artisan config:clear` geleert beziehungsweise neu aufgebaut werden.
 
 Ticket-Anhänge werden standardmäßig privat auf der Disk `attachments`
-gespeichert. Der Docker-Stack bindet dafür das persistente Volume
-`ticket-attachments-data` unter `storage/app/private` ein. Die Dateien liegen
-nicht unter `public/` und werden ausschließlich über autorisierte API- oder
-Filament-Downloads ausgeliefert.
+unter `storage/app/private` gespeichert. Im lokalen Docker-Stack bleibt dieses
+Verzeichnis über den bestehenden Projekt-Bind-Mount `.:/app` persistent. Es
+wird bewusst kein zusätzliches, verschachteltes Volume darübergelegt, damit
+Dateien aus bereits bestehenden Installationen nach einem Upgrade sichtbar
+bleiben. Die Dateien liegen nicht unter `public/` und werden ausschließlich
+über autorisierte API- oder Filament-Downloads ausgeliefert.
 
 Für S3-kompatiblen Objektspeicher können die vorhandenen `AWS_*`-Variablen
 gesetzt und anschließend folgende Einstellung verwendet werden:
@@ -126,8 +128,11 @@ TICKET_ATTACHMENTS_DISK=s3
 
 Die verwendete Disk wird pro Datenbankeintrag gespeichert. Ein späterer
 Wechsel betrifft daher nur neue Uploads; bestehende Anhänge bleiben auf ihrer
-ursprünglichen Disk erreichbar. Das Volume `ticket-attachments-data` muss wie
-die MySQL-Daten in die Backup-Strategie aufgenommen werden.
+ursprünglichen Disk erreichbar. Bei lokalen Installationen muss
+`storage/app/private` zusammen mit den MySQL-Daten in die Backup-Strategie
+aufgenommen werden. Ein produktives Container-Deployment ohne Projekt-
+Bind-Mount muss für diesen Pfad selbst einen persistenten Mount bereitstellen
+oder `TICKET_ATTACHMENTS_DISK=s3` verwenden.
 
 Kurz prüfen, ob alles wie erwartet gesetzt ist:
 
