@@ -134,6 +134,46 @@ aufgenommen werden. Ein produktives Container-Deployment ohne Projekt-
 Bind-Mount muss für diesen Pfad selbst einen persistenten Mount bereitstellen
 oder `TICKET_ATTACHMENTS_DISK=s3` verwenden.
 
+### Upgrade vom kurzzeitig verwendeten Attachment-Volume
+
+Eine frühere Version dieses Projekts hat `storage/app/private` vorübergehend
+mit dem Named Volume `it-service-desk_ticket-attachments-data` überlagert.
+Falls diese Version gestartet und währenddessen Anhänge hochgeladen wurden,
+müssen deren Dateien einmalig mit dem wieder sichtbaren Host-Verzeichnis
+zusammengeführt werden. Datenbankzeilen allein reichen nicht aus.
+
+Zuerst Schreibzugriffe anhalten und dann das mitgelieferte, wiederholbar
+ausführbare Migrationsskript starten:
+
+```bash
+docker compose --env-file .env.docker stop app queue scheduler
+./scripts/migrate-legacy-attachment-volume.sh
+docker compose --env-file .env.docker up -d
+```
+
+Das Skript verhält sich wie folgt:
+
+- Ist das Legacy-Volume nicht vorhanden, endet es erfolgreich ohne Änderung.
+- Dateien aus beiden Speicherorten werden zusammengeführt.
+- Bereits vorhandene Zieldateien werden nicht überschrieben.
+- Das Legacy-Volume wird als Rückfallkopie **nicht** automatisch gelöscht.
+
+Nach der Migration sollten vorhandene Anhänge stichprobenartig über API oder
+Filament heruntergeladen werden. Erst nach erfolgreicher Prüfung und einem
+Backup kann das alte Volume manuell entfernt werden:
+
+```bash
+docker volume rm it-service-desk_ticket-attachments-data
+```
+
+Bei einem abweichenden Compose-Projektnamen kann der tatsächliche Volumename
+explizit übergeben werden:
+
+```bash
+ATTACHMENTS_LEGACY_VOLUME=myproject_ticket-attachments-data \
+  ./scripts/migrate-legacy-attachment-volume.sh
+```
+
 Kurz prüfen, ob alles wie erwartet gesetzt ist:
 
 ```bash
