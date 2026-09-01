@@ -103,7 +103,7 @@ class AttachmentsRelationManager extends RelationManager
                 Action::make('download')
                     ->label('Herunterladen')
                     ->icon(Heroicon::OutlinedArrowDownTray)
-                    ->action(fn (TicketAttachment $record) => Storage::disk('local')
+                    ->action(fn (TicketAttachment $record) => Storage::disk($record->disk)
                         ->download($record->path, $record->filename)),
                 DeleteAction::make()
                     ->visible(fn (TicketAttachment $record) => auth()->user()->can('deleteAttachment', $record))

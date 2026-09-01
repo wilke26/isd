@@ -167,6 +167,7 @@ TABLE(ticket_attachments, "ticket_attachments") {
   FK(ticket_id): bigint unsigned
   FK(user_id): bigint unsigned
   filename: varchar(255)
+  disk: varchar(50) DEFAULT 'attachments'
   path: varchar(500)
   mime_type: varchar(100)
   size: int unsigned

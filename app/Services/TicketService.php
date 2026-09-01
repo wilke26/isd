@@ -16,6 +16,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use Throwable;
 
 class TicketService
 {
@@ -243,26 +245,48 @@ class TicketService
      */
     public function addAttachment(Ticket $ticket, User $uploader, UploadedFile $file): TicketAttachment
     {
-        $storedPath = $file->store("ticket-attachments/{$ticket->id}", 'local');
+        $disk = (string) config('filesystems.ticket_attachments_disk');
+        $storedPath = $file->store("ticket-attachments/{$ticket->id}", $disk);
 
-        return TicketAttachment::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $uploader->id,
-            'filename' => $file->getClientOriginalName(),
-            'path' => $storedPath,
-            // getMimeType() uses PHP's Fileinfo extension to inspect the
-            // actual bytes. getClientMimeType() merely repeats the
-            // user-controlled Content-Type header and must not be trusted.
-            'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
-            'size' => $file->getSize(),
-        ]);
+        if ($storedPath === false) {
+            throw new RuntimeException('Der Ticket-Anhang konnte nicht gespeichert werden.');
+        }
+
+        try {
+            return TicketAttachment::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $uploader->id,
+                'filename' => $this->safeOriginalFilename($file),
+                'disk' => $disk,
+                'path' => $storedPath,
+                // getMimeType() uses PHP's Fileinfo extension to inspect the
+                // actual bytes. getClientMimeType() merely repeats the
+                // user-controlled Content-Type header and must not be trusted.
+                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                'size' => $file->getSize(),
+            ]);
+        } catch (Throwable $exception) {
+            // Do not leave an unreferenced object behind when the DB write
+            // fails after a successful filesystem operation.
+            Storage::disk($disk)->delete($storedPath);
+
+            throw $exception;
+        }
     }
 
     /** Removes both the file from disk and the DB record. */
     public function deleteAttachment(TicketAttachment $attachment): void
     {
-        Storage::disk('local')->delete($attachment->path);
+        Storage::disk($attachment->disk)->delete($attachment->path);
         $attachment->delete();
+    }
+
+    private function safeOriginalFilename(UploadedFile $file): string
+    {
+        $clientName = str_replace('\\', '/', $file->getClientOriginalName());
+        $filename = str_replace(["\0", "\r", "\n"], '', basename($clientName));
+
+        return $filename !== '' ? $filename : 'attachment';
     }
 
     private function recordHistory(Ticket $ticket, User $actor, string $field, ?string $old, ?string $new): void

@@ -8,6 +8,7 @@ use App\Enums\TicketStatus;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\Ticket;
+use App\Models\TicketAttachment;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -370,7 +371,7 @@ class TicketTest extends TestCase
 
     public function test_requester_can_upload_attachment_to_own_ticket(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $requester = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
@@ -384,12 +385,16 @@ class TicketTest extends TestCase
         $this->assertDatabaseHas('ticket_attachments', [
             'ticket_id' => $ticket->id,
             'filename' => 'screenshot.png',
+            'disk' => 'attachments',
         ]);
+
+        $attachment = TicketAttachment::where('ticket_id', $ticket->id)->sole();
+        Storage::disk('attachments')->assertExists($attachment->path);
     }
 
     public function test_attachment_mime_type_is_detected_from_content_not_client_header(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $requester = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
@@ -422,7 +427,7 @@ class TicketTest extends TestCase
 
     public function test_requester_cannot_upload_attachment_to_others_ticket(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $ticket = Ticket::factory()->create();
         $this->actingAsUser();
@@ -435,7 +440,7 @@ class TicketTest extends TestCase
 
     public function test_staff_can_upload_attachment_to_any_ticket(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $ticket = Ticket::factory()->create();
         $this->actingAsAgent();
@@ -448,7 +453,7 @@ class TicketTest extends TestCase
 
     public function test_attachment_can_be_downloaded_by_ticket_viewer(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $requester = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
@@ -462,9 +467,30 @@ class TicketTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_attachment_uses_and_records_the_configured_private_disk(): void
+    {
+        Storage::fake('archive');
+        config(['filesystems.ticket_attachments_disk' => 'archive']);
+
+        $requester = $this->createUser();
+        $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+        Sanctum::actingAs($requester);
+
+        $attachmentId = $this->postJson(
+            "/api/v1/tickets/{$ticket->id}/attachments",
+            ['file' => UploadedFile::fake()->create('report.pdf', 100, 'application/pdf')],
+        )->assertCreated()->json('data.id');
+
+        $attachment = TicketAttachment::findOrFail($attachmentId);
+
+        $this->assertSame('archive', $attachment->disk);
+        Storage::disk('archive')->assertExists($attachment->path);
+        $this->get("/api/v1/tickets/{$ticket->id}/attachments/{$attachmentId}")->assertOk();
+    }
+
     public function test_uploader_can_delete_own_attachment(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $requester = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
@@ -477,11 +503,12 @@ class TicketTest extends TestCase
 
         $response->assertOk();
         $this->assertDatabaseMissing('ticket_attachments', ['id' => $attachmentId]);
+        Storage::disk('attachments')->assertDirectoryEmpty("ticket-attachments/{$ticket->id}");
     }
 
     public function test_other_requester_cannot_delete_attachment(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $uploader = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $uploader->id]);
@@ -499,7 +526,7 @@ class TicketTest extends TestCase
 
     public function test_attachment_upload_rejects_invalid_file_type(): void
     {
-        Storage::fake('local');
+        Storage::fake('attachments');
 
         $requester = $this->createUser();
         $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
