@@ -23,7 +23,6 @@ class License extends Model
         'product',
         'license_key',
         'seats_total',
-        'seats_used',
         'expires_at',
     ];
 
@@ -34,7 +33,6 @@ class License extends Model
             'license_key' => 'encrypted',
             'expires_at' => 'date',
             'seats_total' => 'integer',
-            'seats_used' => 'integer',
         ];
     }
 
@@ -45,11 +43,20 @@ class License extends Model
 
     public function hasAvailableSeats(): bool
     {
-        return $this->seats_used < $this->seats_total;
+        return $this->seatsUsed() < $this->seats_total;
     }
 
     public function availableSeats(): int
     {
-        return max(0, $this->seats_total - $this->seats_used);
+        return max(0, $this->seats_total - $this->seatsUsed());
+    }
+
+    public function seatsUsed(): int
+    {
+        if (array_key_exists('assignments_count', $this->attributes)) {
+            return (int) $this->attributes['assignments_count'];
+        }
+
+        return $this->assignments()->count();
     }
 }

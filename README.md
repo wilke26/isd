@@ -25,11 +25,19 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 **Fokus:** Tickets, Assets und Autorisierung bilden den fachlichen Kern und zeigen die eigentliche Substanz (Statusmaschine, echte Rechteprüfung, Audit Trail). Wissensdatenbank und Lizenzverwaltung sind bewusst als erweiterte Module angelegt — vollständig funktionsfähig und getestet, aber nicht der Schwerpunkt.
 
 ### Asset-Management
-- Verwaltung von Geräten, Servern, Lizenzen und Netzwerkinfrastruktur
+- Verwaltung von Geräten, Servern und Netzwerkinfrastruktur
 - Hierarchische Asset-Kategorien (z. B. Hardware → Laptops)
 - Vollständige Zuweisungshistorie, gegen Parallelzugriffe gesperrt und zusätzlich durch einen Datenbank-Constraint abgesichert (nie zwei aktive Zuweisungen gleichzeitig)
-- Lizenz-Tracking mit Sitzplatzkontingent und Ablaufdatum
 - Rollenbasierter Zugriff: Requester sehen nur die ihnen zugewiesenen Assets
+
+### Lizenzverwaltung
+- Eigene Filament-Verwaltung für Lizenzbestand, Hersteller, Produkt, Kontingent und Ablaufdatum
+- Verschlüsselte Speicherung von Lizenzschlüsseln; vorhandene Schlüssel werden nie in ein Bearbeitungsformular zurückgeladen
+- Zuweisung einzelner Sitzplätze an Benutzer oder Assets
+- Transaktionale Sitzplatzprüfung mit Row Lock gegen parallele Überbelegung
+- Belegte Sitzplätze werden aus den Zuweisungen abgeleitet statt über einen driftanfälligen Zähler gepflegt
+- Datenbank-Constraints verhindern doppelte Zuweisungen desselben Lizenzziels
+- Agent/Admin verwalten Bestand und Zuweisungen; nur Admin darf eine unbenutzte Lizenz löschen
 
 ### Ticketsystem
 - Erstellen, Bearbeiten und Schließen von Support-Tickets
@@ -57,7 +65,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 ### REST-API
 - Versionierte API (`/api/v1/`) für **Tickets, Assets und Wissensartikel** inklusive Workflow-Endpunkten (Submit/Publish/Archive, Asset-Zuweisung)
 - JSON-Antworten mit Paginierung, Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
-- Für Benutzer, Rollen, Berechtigungen, Lizenzen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte — Verwaltung erfolgt über Seeder/Datenbank. Eine Oberfläche gibt es bislang nur als Laravel-Standardseite plus `/metrics`; als Backend-Referenz ist das bewusst so begrenzt.
+- Für Benutzer, Rollen, Berechtigungen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte. Lizenzen werden bewusst ausschließlich intern über das Filament-Panel verwaltet; das Requester-Portal erhält weder Lizenzschlüssel noch Bestandsdaten.
 
 ### Observability
 - `/metrics` im Prometheus-Textformat (Ticket-Zahlen je Status, HTTP-Request-Rate und -Latenz)

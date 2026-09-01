@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,7 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
  *
  * @mixin IdeHelperUser
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -68,6 +70,16 @@ class User extends Authenticatable
     public function hasRole(string $slug): bool
     {
         return $this->roles->contains('slug', $slug);
+    }
+
+    /**
+     * The internal Filament panel is never a requester-facing entry point.
+     * Implementing FilamentUser is also required outside APP_ENV=local;
+     * without it Filament rejects every production login by design.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->roles()->whereIn('slug', ['admin', 'agent'])->exists();
     }
 
     // ─── Assets ───────────────────────────────────────────────────
