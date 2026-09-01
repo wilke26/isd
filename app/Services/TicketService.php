@@ -114,7 +114,7 @@ class TicketService
 
             $this->recordHistory($ticket, $requester, 'status', null, TicketStatus::Open->value);
 
-            return $ticket->load(['requester', 'category', 'asset']);
+            return $ticket->load(['requester', 'assignee', 'category', 'asset']);
         });
     }
 
