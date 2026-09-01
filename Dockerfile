@@ -110,7 +110,18 @@ COPY docker/caddy/Caddyfile /etc/frankenphp/Caddyfile
 
 # Composer-Dependencies separat installieren (besseres Layer-Caching)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction --prefer-dist
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    export COMPOSER_CACHE_DIR=/tmp/composer-cache; \
+    for attempt in 1 2 3; do \
+        if composer install --no-dev --no-scripts --no-autoloader --no-interaction --prefer-dist; then \
+            exit 0; \
+        fi; \
+        if [ "$attempt" -eq 3 ]; then \
+            exit 1; \
+        fi; \
+        echo "Composer download failed; retrying attempt $((attempt + 1)) of 3..."; \
+        sleep $((attempt * 10)); \
+    done
 
 COPY . .
 RUN composer dump-autoload --optimize \
