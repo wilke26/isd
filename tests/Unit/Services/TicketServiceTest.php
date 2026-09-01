@@ -301,6 +301,40 @@ class TicketServiceTest extends TestCase
         ]);
     }
 
+    public function test_comment_does_not_overwrite_a_newer_ticket_status_from_a_stale_model(): void
+    {
+        $requester = User::factory()->create();
+        $staleTicket = Ticket::factory()->create([
+            'requester_id' => $requester->id,
+            'status' => TicketStatus::WaitingForRequester,
+        ]);
+
+        // Simulate a concurrent agent action after the caller loaded the
+        // ticket but before the comment transaction starts.
+        Ticket::query()->whereKey($staleTicket->id)->update([
+            'status' => TicketStatus::Resolved,
+            'resolved_at' => now(),
+        ]);
+
+        $this->service->addComment(
+            $staleTicket,
+            $requester,
+            'Die angeforderten Informationen sind ergänzt.',
+            false,
+        );
+
+        $this->assertEquals(TicketStatus::Resolved, $staleTicket->fresh()->status);
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $staleTicket->id,
+            'body' => 'Die angeforderten Informationen sind ergänzt.',
+        ]);
+        $this->assertDatabaseMissing('ticket_history', [
+            'ticket_id' => $staleTicket->id,
+            'old_value' => TicketStatus::WaitingForRequester->value,
+            'new_value' => TicketStatus::InProgress->value,
+        ]);
+    }
+
     public function test_internal_comment_does_not_trigger_status_change(): void
     {
         $agent = User::factory()->create();
