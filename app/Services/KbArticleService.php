@@ -123,6 +123,12 @@ class KbArticleService
         return $this->updateWithUniqueSlug($article, $data);
     }
 
+    /** Soft-delete an article through the shared domain entry point. */
+    public function delete(KbArticle $article): void
+    {
+        $article->delete();
+    }
+
     /** Same race-condition problem as in create(), same solution. */
     private function updateWithUniqueSlug(KbArticle $article, array $data, int $attempt = 0): KbArticle
     {

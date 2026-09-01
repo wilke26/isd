@@ -75,7 +75,7 @@ zulässig.
 |---|---|---|
 | Tickets | Erstellen, Bearbeiten, Statuswechsel, Kommentare, Anhänge und Requester-sichtbare Abfragen | Staff-Listen und rein darstellende Filament-Abfragen |
 | Assets | API-CRUD, Zuweisen, Zurückgeben, Zuweisungshistorie und Requester-sichtbare Abfragen | Einfache Filament-Pflege der Asset-Metadaten sowie Soft-Delete/Restore, solange keine zusätzliche Invariante entsteht |
-| Wissensdatenbank | Erstellen, Bearbeiten, Slug-Vergabe, Submit/Publish/Archive, Addenda und Requester-sichtbare Abfragen | Staff-Listen und rein darstellende Filament-Abfragen |
+| Wissensdatenbank | Erstellen, Bearbeiten, Löschen, Slug-Vergabe, Submit/Publish/Archive, Addenda und Requester-sichtbare Abfragen | Staff-Listen und rein darstellende Filament-Abfragen |
 
 Die Asset-Zuweisung ist das wichtigste Gegenbeispiel zu direktem CRUD: Sie muss
 immer `AssetService::assign()` beziehungsweise `unassign()` verwenden, weil dort
