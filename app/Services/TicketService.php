@@ -209,7 +209,15 @@ class TicketService
     public function addComment(Ticket $ticket, User $author, string $body, bool $isInternal = false): void
     {
         DB::transaction(function () use ($ticket, $author, $body, $isInternal) {
-            $ticket->comments()->create([
+            // Serialize the comment-driven transition with every other ticket
+            // update. The model passed by the caller may already be stale;
+            // only the locked row represents the status on which this
+            // automatic transition is allowed to act.
+            $lockedTicket = Ticket::query()
+                ->lockForUpdate()
+                ->findOrFail($ticket->id);
+
+            $lockedTicket->comments()->create([
                 'user_id' => $author->id,
                 'body' => $body,
                 'is_internal' => $isInternal,
@@ -221,18 +229,18 @@ class TicketService
             // Internal comments deliberately do not trigger a status change.
             if (
                 ! $isInternal
-                && $ticket->requester_id === $author->id
-                && $ticket->status === TicketStatus::WaitingForRequester
+                && $lockedTicket->requester_id === $author->id
+                && $lockedTicket->status === TicketStatus::WaitingForRequester
             ) {
                 $this->recordHistory(
-                    $ticket,
+                    $lockedTicket,
                     $author,
                     'status',
                     TicketStatus::WaitingForRequester->value,
                     TicketStatus::InProgress->value,
                 );
 
-                $ticket->update(['status' => TicketStatus::InProgress]);
+                $lockedTicket->update(['status' => TicketStatus::InProgress]);
             }
         });
     }
