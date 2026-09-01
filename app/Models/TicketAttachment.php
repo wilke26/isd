@@ -19,6 +19,7 @@ class TicketAttachment extends Model
         'ticket_id',
         'user_id',
         'filename',
+        'disk',
         'path',
         'mime_type',
         'size',

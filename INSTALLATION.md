@@ -111,6 +111,24 @@ CORS_ALLOWED_ORIGINS=https://portal.example.com,https://portal-staging.example.c
 Nach einer Änderung bei aktivem Laravel-Konfigurationscache muss dieser mit
 `php artisan config:clear` geleert beziehungsweise neu aufgebaut werden.
 
+Ticket-Anhänge werden standardmäßig privat auf der Disk `attachments`
+gespeichert. Der Docker-Stack bindet dafür das persistente Volume
+`ticket-attachments-data` unter `storage/app/private` ein. Die Dateien liegen
+nicht unter `public/` und werden ausschließlich über autorisierte API- oder
+Filament-Downloads ausgeliefert.
+
+Für S3-kompatiblen Objektspeicher können die vorhandenen `AWS_*`-Variablen
+gesetzt und anschließend folgende Einstellung verwendet werden:
+
+```dotenv
+TICKET_ATTACHMENTS_DISK=s3
+```
+
+Die verwendete Disk wird pro Datenbankeintrag gespeichert. Ein späterer
+Wechsel betrifft daher nur neue Uploads; bestehende Anhänge bleiben auf ihrer
+ursprünglichen Disk erreichbar. Das Volume `ticket-attachments-data` muss wie
+die MySQL-Daten in die Backup-Strategie aufgenommen werden.
+
 Kurz prüfen, ob alles wie erwartet gesetzt ist:
 
 ```bash

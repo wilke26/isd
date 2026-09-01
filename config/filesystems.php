@@ -17,6 +17,10 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    // Kept separate from the framework default so ticket files can move to
+    // object storage without changing cache, export or temporary-file disks.
+    'ticket_attachments_disk' => env('TICKET_ATTACHMENTS_DISK', 'attachments'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
@@ -38,6 +42,13 @@ return [
             'serve' => true,
             'throw' => false,
             'report' => false,
+        ],
+
+        'attachments' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'throw' => true,
+            'report' => true,
         ],
 
         'public' => [

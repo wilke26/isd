@@ -115,7 +115,7 @@ class TicketController extends Controller
 
         $attachment = TicketAttachment::where('ticket_id', $ticket->id)->findOrFail($attachmentId);
 
-        return Storage::disk('local')->download($attachment->path, $attachment->filename);
+        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->filename);
     }
 
     /** Delete attachment — staff or whoever uploaded it themselves */
