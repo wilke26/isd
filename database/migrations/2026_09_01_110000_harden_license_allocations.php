@@ -52,6 +52,10 @@ return new class extends Migration
         }
 
         Schema::table('license_assignments', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['asset_id']);
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('asset_id')->references('id')->on('assets')->cascadeOnDelete();
             $table->unique(['license_id', 'user_id'], 'license_assignments_license_user_unique');
             $table->unique(['license_id', 'asset_id'], 'license_assignments_license_asset_unique');
         });
@@ -80,6 +84,10 @@ return new class extends Migration
         Schema::table('license_assignments', function (Blueprint $table) {
             $table->dropUnique('license_assignments_license_user_unique');
             $table->dropUnique('license_assignments_license_asset_unique');
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['asset_id']);
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('asset_id')->references('id')->on('assets')->nullOnDelete();
         });
     }
 

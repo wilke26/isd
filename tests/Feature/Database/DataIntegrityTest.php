@@ -83,4 +83,36 @@ class DataIntegrityTest extends TestCase
             'user_id' => $user->id,
         ]);
     }
+
+    public function test_deleting_a_user_releases_the_assigned_license_seat(): void
+    {
+        $license = License::factory()->create(['seats_total' => 1]);
+        $user = User::factory()->create();
+        $assignment = LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => $user->id,
+            'asset_id' => null,
+        ]);
+
+        $user->delete();
+
+        $this->assertDatabaseMissing('license_assignments', ['id' => $assignment->id]);
+        $this->assertSame(0, $license->seatsUsed());
+    }
+
+    public function test_soft_deleting_an_asset_releases_the_assigned_license_seat(): void
+    {
+        $license = License::factory()->create(['seats_total' => 1]);
+        $asset = Asset::factory()->create();
+        $assignment = LicenseAssignment::factory()->create([
+            'license_id' => $license->id,
+            'user_id' => null,
+            'asset_id' => $asset->id,
+        ]);
+
+        $asset->delete();
+
+        $this->assertDatabaseMissing('license_assignments', ['id' => $assignment->id]);
+        $this->assertSame(0, $license->seatsUsed());
+    }
 }

@@ -20,6 +20,15 @@ class Asset extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Asset $asset): void {
+            // Soft deletes do not invoke the database foreign key. Releasing
+            // the assignments here keeps consumed seats tied to live assets.
+            $asset->licenseAssignments()->delete();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      */

@@ -134,7 +134,18 @@ jobs:
       - name: Install Composer dependencies
         run: |
           docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.ci.yml \
-            run --rm app composer install --no-interaction --prefer-dist --optimize-autoloader
+            run --rm app sh -ec '
+              for attempt in 1 2 3; do
+                if composer install --no-interaction --prefer-dist --optimize-autoloader; then
+                  exit 0
+                fi
+                if [ "$attempt" -eq 3 ]; then
+                  exit 1
+                fi
+                echo "Composer download failed; retrying attempt $((attempt + 1)) of 3..."
+                sleep $((attempt * 10))
+              done
+            '
 
       - name: Verify CI commands execute inside the app container
         run: |
@@ -320,7 +331,19 @@ jobs:
       # Dockerfile: Verzeichnisse werden vor USER appuser mit passenden
       # Rechten angelegt).
       - name: Install Composer dependencies
-        run: docker compose --env-file .env.docker exec -T app composer install --no-interaction
+        run: |
+          docker compose --env-file .env.docker exec -T app sh -ec '
+            for attempt in 1 2 3; do
+              if composer install --no-interaction --prefer-dist; then
+                exit 0
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                exit 1
+              fi
+              echo "Composer download failed; retrying attempt $((attempt + 1)) of 3..."
+              sleep $((attempt * 10))
+            done
+          '
 
       - name: Generate application key
         run: docker compose --env-file .env.docker exec -T app php artisan key:generate
