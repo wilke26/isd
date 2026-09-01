@@ -119,6 +119,12 @@ Laravel 13
 
 Das Projekt folgt dem **Service-Layer-Pattern**: Controller autorisieren über Policies und delegieren Geschäftslogik an Services, die direkt mit Eloquent-Models arbeiten. Ein zusätzliches Repository-Pattern wurde bewusst nicht eingesetzt, da Eloquent bereits eine saubere Datenzugriffs-Abstraktion bietet.
 
+Die verbindlichen Grenzen zwischen Einstiegspunkten, Service-Schicht und
+direktem Eloquent-Zugriff sind in
+[ADR 0001: Domänenänderungen über die Service-Schicht](docs/adr/0001-service-layer-boundaries.md)
+dokumentiert. Neue Controller, Filament-Actions, Jobs und Commands werden anhand
+der dort enthaltenen Prüfliste eingeordnet.
+
 ---
 
 ## Schnellstart

@@ -68,7 +68,7 @@ class KbArticleController extends Controller
         $article = $this->kbService->findVisibleToOrFail($request->user(), $id);
         $this->authorize('delete', $article);
 
-        $article->delete();
+        $this->kbService->delete($article);
 
         return response()->json(['message' => 'Artikel gelöscht.']);
     }
