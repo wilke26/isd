@@ -104,9 +104,11 @@ class TicketTest extends TestCase
         ]);
 
         $response->assertCreated()
+            ->assertJsonStructure(['data' => ['assignee']])
             ->assertJsonPath('data.title', 'Mein Laptop startet nicht')
             ->assertJsonPath('data.status.value', 'open')
-            ->assertJsonPath('data.requester.id', $user->id);
+            ->assertJsonPath('data.requester.id', $user->id)
+            ->assertJsonPath('data.assignee', null);
 
         $this->assertDatabaseHas('tickets', [
             'title' => 'Mein Laptop startet nicht',
