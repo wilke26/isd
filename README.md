@@ -1,157 +1,178 @@
-# IT-Service-Desk
+# IT Service Desk
 
-Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System ermöglicht die zentrale Verwaltung von IT-Assets, die Bearbeitung von Support-Tickets sowie den Betrieb einer internen Wissensdatenbank.
+**English** | [Deutsch](README.de.md)
 
----
+A production-oriented **IT service desk and asset management system** for managing
+support tickets, IT assets, software licenses, and an internal knowledge base.
 
-## Inhaltsverzeichnis
+## Contents
 
-- [Features](#features)
-- [Technologie-Stack](#technologie-stack)
-- [Architektur](#architektur)
-- [Schnellstart](#schnellstart)
-- [Installationsanleitung](#installationsanleitung)
-- [API-Dokumentation](#api-dokumentation)
-- [Autorisierung](#autorisierung)
+- [Highlights](#highlights)
+- [Technology stack](#technology-stack)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Installation](#installation)
+- [API documentation](#api-documentation)
+- [Authorization](#authorization)
 - [Observability](#observability)
 - [Tests](#tests)
-- [Datenbankschema](#datenbankschema)
+- [Database schema](#database-schema)
 - [CI/CD](#cicd)
-- [Projektstruktur](#projektstruktur)
+- [Project structure](#project-structure)
 
----
+## Highlights
 
-## Features
-**Fokus:** Tickets, Assets und Autorisierung bilden den fachlichen Kern und zeigen die eigentliche Substanz (Statusmaschine, echte Rechteprüfung, Audit Trail). Wissensdatenbank und Lizenzverwaltung sind bewusst als erweiterte Module angelegt — vollständig funktionsfähig und getestet, aber nicht der Schwerpunkt.
+**Project focus:** Tickets, assets, and authorization form the domain core and
+demonstrate the system's main engineering concerns: explicit state transitions,
+server-side access control, concurrency safety, and a complete audit trail. The
+knowledge base and license management are fully functional and tested extension
+modules.
 
-### Asset-Management
-- Verwaltung von Geräten, Servern und Netzwerkinfrastruktur
-- Hierarchische Asset-Kategorien (z. B. Hardware → Laptops)
-- Vollständige Zuweisungshistorie, gegen Parallelzugriffe gesperrt und zusätzlich durch einen Datenbank-Constraint abgesichert (nie zwei aktive Zuweisungen gleichzeitig)
-- Rollenbasierter Zugriff: Requester sehen nur die ihnen zugewiesenen Assets
+### Asset management
 
-### Lizenzverwaltung
-- Eigene Filament-Verwaltung für Lizenzbestand, Hersteller, Produkt, Kontingent und Ablaufdatum
-- Verschlüsselte Speicherung von Lizenzschlüsseln; vorhandene Schlüssel werden nie in ein Bearbeitungsformular zurückgeladen
-- Zuweisung einzelner Sitzplätze an Benutzer oder Assets
-- Transaktionale Sitzplatzprüfung mit Row Lock gegen parallele Überbelegung
-- Belegte Sitzplätze werden aus den Zuweisungen abgeleitet statt über einen driftanfälligen Zähler gepflegt
-- Datenbank-Constraints verhindern doppelte Zuweisungen desselben Lizenzziels
-- Agent/Admin verwalten Bestand und Zuweisungen; nur Admin darf eine unbenutzte Lizenz löschen
+- Manage workstations, servers, and network infrastructure
+- Organize assets in hierarchical categories, such as Hardware → Laptops
+- Keep a complete assignment history with transactional locking and a database
+  constraint that prevents two active assignments for the same asset
+- Restrict requesters to assets assigned to them
 
-### Ticketsystem
-- Erstellen, Bearbeiten und Schließen von Support-Tickets
-- Prioritätsstufen: Niedrig, Mittel, Hoch, Kritisch
-- **Fünfstufiger Status-Workflow mit verbindlicher Übergangsmatrix:**
-  `open → in_progress → waiting_for_requester → resolved → closed`
-  (inkl. Direktweg `open → resolved` und Wiedereröffnung `resolved → in_progress`).
-  Ungültige Übergänge werden mit HTTP 409 abgelehnt — einheitlich für alle Rollen, auch Admins.
-- Automatischer Statuswechsel `waiting_for_requester → in_progress`, sobald der Requester öffentlich antwortet
-- Interne (agenten-only) und öffentliche Kommentare — interne Kommentare werden Requestern serverseitig nie ausgeliefert
-- Vollständige Änderungshistorie (Audit Trail), inkl. automatischer Übergänge
-- Verknüpfung von Tickets mit betroffenen Assets
+### License management
 
-### Wissensdatenbank
-- Redaktioneller Workflow: `draft → submitted → published → archived`
-- Requester können Entwürfe erstellen, bearbeiten und zur Prüfung einreichen — veröffentlichen dürfen nur Agent/Admin
-- Kategorien und Tags, Volltextsuche
-- Kollisionssicherer Slug (`titel`, `titel-2`, `titel-3`, …)
+- Manage inventory, vendor, product, seat capacity, and expiration in Filament
+- Store license keys encrypted and never repopulate existing keys into edit forms
+- Assign individual seats to users or assets
+- Prevent concurrent over-allocation through transactions and row-level locks
+- Derive used seats from assignments instead of maintaining a drift-prone counter
+- Prevent duplicate assignments for the same license target through database
+  constraints
+- Allow agents and administrators to manage inventory and assignments, while only
+  administrators may delete an unused license
 
-### Benutzerverwaltung & Rollen
-- Rollen: Administrator, Agent, Benutzer — Admin für systemweite/destruktive Vorgänge, Agent für das operative Tagesgeschäft
-- Durchgängige Autorisierung über Laravel Policies (nicht nur UI-seitig gefiltert)
-- Token-basierte API-Authentifizierung (Laravel Sanctum)
+### Ticketing
 
-### REST-API
-- Versionierte API (`/api/v1/`) für **Tickets, Assets und Wissensartikel** inklusive Workflow-Endpunkten (Submit/Publish/Archive, Asset-Zuweisung)
-- JSON-Antworten mit Paginierung, Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
-- Rate-Limiting über `throttle:api` pro authentifiziertem Benutzer auf allen geschützten API-Routen; zusätzlich begrenzt `throttle:login` Login-Versuche je Kombination aus E-Mail-Adresse und IP-Adresse
-- Für Benutzer, Rollen, Berechtigungen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte. Lizenzen werden bewusst ausschließlich intern über das Filament-Panel verwaltet; das Requester-Portal erhält weder Lizenzschlüssel noch Bestandsdaten.
+- Create, update, resolve, and close support tickets
+- Support low, medium, high, and critical priorities
+- Enforce a five-stage workflow:
+  `open → in_progress → waiting_for_requester → resolved → closed`, including
+  `open → resolved` and reopening through `resolved → in_progress`
+- Reject invalid transitions with HTTP 409 for every role, including administrators
+- Automatically return `waiting_for_requester` tickets to `in_progress` when the
+  requester posts a public reply
+- Keep internal agent-only comments out of requester responses on the server side
+- Record all changes and automatic transitions in an audit trail
+- Link tickets to affected assets
+
+### Knowledge base
+
+- Editorial workflow: `draft → submitted → published → archived`
+- Let requesters create, edit, and submit their own drafts; publishing remains
+  restricted to agents and administrators
+- Categories, tags, and full-text search
+- Collision-safe slugs such as `title`, `title-2`, and `title-3`
+
+### Users and roles
+
+- Administrator, agent, and requester roles
+- Laravel Policies enforce authorization throughout the application, rather than
+  relying on UI filtering
+- Token-based API authentication with Laravel Sanctum
+
+### REST API
+
+- Versioned `/api/v1` endpoints for tickets, assets, and knowledge articles,
+  including workflow operations such as submit, publish, archive, and assignment
+- Paginated JSON responses with status, priority, category, and full-text filters
+- `throttle:api` rate limiting per authenticated user on all protected API routes;
+  `throttle:login` additionally limits login attempts per email/IP pair
+- Users, roles, permissions, and asset/ticket categories and statuses intentionally
+  have no dedicated API endpoints. License management remains internal to Filament;
+  the requester portal receives neither license keys nor inventory data.
 
 ### Observability
-- `/metrics` im Prometheus-Textformat (Ticket-Zahlen je Status, HTTP-Request-Rate und -Latenz)
-- Request-ID pro Anfrage (Response-Header `X-Request-Id` + Log-Kontext)
-- Strukturierte JSON-Logs direkt an Loki
 
----
+- Prometheus-compatible `/metrics` endpoint with ticket totals, HTTP request rate,
+  and latency
+- Request IDs in the `X-Request-Id` response header and structured log context
+- Structured JSON logs sent directly to Loki
 
-## Technologie-Stack
+## Technology stack
 
-| Schicht | Technologie |
+| Layer | Technology |
 |---|---|
 | Runtime | PHP 8.5 |
 | Framework | **Laravel 13** |
-| Webserver | FrankenPHP + Caddy |
-| Datenbank | MySQL 8.4 |
-| Cache / Queue / Metrik-Zähler | Redis 7 |
-| Authentifizierung | Laravel Sanctum |
-| Autorisierung | Laravel Policies |
-| Observability | Prometheus-Metrikendpunkt, strukturierte Logs an Loki |
-| Tests | PHPUnit (via `php artisan test`) |
-| Codestyle | Laravel Pint |
-| Statische Analyse | PHPStan + Larastan (Level 5, **verbindlich in CI**) |
-| Containerisierung | Docker + Docker Compose, Dev-Container läuft als Non-Root-User |
+| Web server | FrankenPHP + Caddy |
+| Database | MySQL 8.4 |
+| Cache, queue, and metric counters | Redis 7 |
+| Authentication | Laravel Sanctum |
+| Authorization | Laravel Policies |
+| Administration | Filament |
+| Observability | Prometheus metrics and structured Loki logs |
+| Tests | PHPUnit via `php artisan test` |
+| Code style | Laravel Pint |
+| Static analysis | PHPStan + Larastan, level 5 and enforced in CI |
+| Containers | Docker + Docker Compose; non-root development container |
 | CI/CD | GitHub Actions |
-| IDE | JetBrains PHPStorm |
 
----
+## Architecture
 
-## Architektur
-
-```
+```text
 Laravel 13
 │
-├── Authentication (Sanctum Token-Auth)
-├── Authorization (Policies: TicketPolicy, AssetPolicy, KbArticlePolicy)
+├── Authentication (Sanctum token authentication)
+├── Authorization (TicketPolicy, AssetPolicy, KbArticlePolicy)
 ├── REST API v1
 │   ├── AuthController
 │   ├── TicketController
 │   ├── AssetController
-│   └── KbArticleController (inkl. submit/publish/archive)
+│   └── KbArticleController (submit, publish, archive)
 ├── Middleware
-│   ├── AssignRequestId (Request-ID pro Anfrage)
-│   └── RecordRequestMetrics (Redis-Zähler + Loki-Log)
-├── Service Layer
-│   ├── TicketService (Übergangsmatrix, History-Tracking, Auto-Transitions)
-│   ├── AssetService (Zuweisungen mit Lock, History)
-│   └── KbArticleService (Redaktions-Workflow, Slug-Kollisionsschutz)
-├── Eloquent Models (17 Models, PHP 8.1 Enums inkl. Übergangsmatrix)
-├── API Resources (JSON-Transformation, interne Kommentare rollenabhängig gefiltert)
-├── Form Requests (getrennte Store-/Update-Validierung)
-├── MetricsController (/metrics, Prometheus-Textformat)
-├── Custom Logging (LokiHandler — strukturierte Logs per HTTP an Loki)
-├── MySQL (27+ Tabellen, normalisiertes Schema)
-├── Redis (Cache/Queue/Sessions + Request-Metrik-Zähler)
-├── Migrations + Seeders
-└── PHPUnit Tests
+│   ├── AssignRequestId
+│   └── RecordRequestMetrics
+├── Service layer
+│   ├── TicketService (transition matrix, history, automatic transitions)
+│   ├── AssetService (locking and assignment history)
+│   └── KbArticleService (editorial workflow and collision-safe slugs)
+├── Eloquent models and PHP enums
+├── API resources (JSON transformation and role-aware comment filtering)
+├── Form requests (separate create and update validation)
+├── MetricsController (Prometheus text format)
+├── LokiHandler (structured logs over HTTP)
+├── MySQL
+├── Redis
+├── Migrations and seeders
+└── PHPUnit tests
 ```
 
-Das Projekt folgt dem **Service-Layer-Pattern**: Controller autorisieren über Policies und delegieren Geschäftslogik an Services, die direkt mit Eloquent-Models arbeiten. Ein zusätzliches Repository-Pattern wurde bewusst nicht eingesetzt, da Eloquent bereits eine saubere Datenzugriffs-Abstraktion bietet.
+The application follows a service-layer architecture. Controllers authorize
+requests through Policies and delegate domain mutations to services, which work
+directly with Eloquent models. A separate repository layer is deliberately omitted
+because Eloquent already provides the required persistence abstraction.
 
-Die verbindlichen Grenzen zwischen Einstiegspunkten, Service-Schicht und
-direktem Eloquent-Zugriff sind in
-[ADR 0001: Domänenänderungen über die Service-Schicht](docs/adr/0001-service-layer-boundaries.md)
-dokumentiert. Neue Controller, Filament-Actions, Jobs und Commands werden anhand
-der dort enthaltenen Prüfliste eingeordnet.
+The mandatory boundaries between entry points, services, and direct Eloquent
+access are documented in
+[ADR 0001: Domain changes through the service layer](docs/adr/0001-service-layer-boundaries.md)
+(German). New controllers, Filament actions, jobs, and commands are classified
+using the checklist in that decision record.
 
----
+## Quick start
 
-## Schnellstart
+The following commands reproduce the Docker-based development setup. The complete
+installation guide documents platform-specific details.
 
 ```bash
 git clone https://github.com/wilke26/isd.git
 cd isd
 
-# 1) Laravel-eigene Konfiguration
+# 1) Laravel application configuration
 cp .env.example .env
 
-# 2) Docker-Compose-Konfiguration — SEPARAT von .env, siehe Installationsanleitung
+# 2) Docker Compose configuration, kept separate from .env
 cp .env.docker.example .env.docker
 echo "UID=$(id -u)" >> .env.docker
 echo "GID=$(id -g)" >> .env.docker
 
-# 3) .env auf Docker-Netzwerk-Servicenamen umstellen (robust gegen kommentierte
-#    oder fehlende Zeilen in .env.example — siehe INSTALLATION.md Schritt 4)
+# 3) Point Laravel at the Docker network service names
 set_env_var() {
   local key="$1" value="$2"
   if grep -qE "^#?[[:space:]]*${key}=" .env; then
@@ -181,152 +202,159 @@ docker compose --env-file .env.docker exec app php artisan key:generate
 docker compose --env-file .env.docker exec app php artisan migrate --seed
 ```
 
-Anwendung erreichbar unter: **https://isd.local**
-Mailpit (E-Mail-Vorschau): http://localhost:8025
-Metriken: http://isd.local/metrics (Bearer-Token aus `METRICS_TOKEN` erforderlich)
+Services after setup:
 
-Login-Zugangsdaten (Testdaten):
-- Admin: `admin@isd.local` / `password`
-- Agent: `a.mueller@isd.local` / `password`
-- Benutzer: `c.weber@isd.local` / `password`
+- Application: **https://isd.local**
+- Mailpit: **http://localhost:8025**
+- Metrics: **http://isd.local/metrics** using the `METRICS_TOKEN` bearer token
 
----
+Seeded development accounts:
 
-## Installationsanleitung
+| Role | Email | Password |
+|---|---|---|
+| Administrator | `admin@isd.local` | `password` |
+| Agent | `a.mueller@isd.local` | `password` |
+| Requester | `c.weber@isd.local` | `password` |
 
-Siehe [INSTALLATION.md](INSTALLATION.md) für die vollständige Schritt-für-Schritt-Anleitung, inklusive TLS-Zertifikat, PHPStorm-Einrichtung und Observability-Anbindung.
+These credentials are development fixtures and must not be used in production.
 
----
+## Installation
 
-## API-Dokumentation
+See [INSTALLATION.md](INSTALLATION.md) (German) for the complete guide, including
+TLS certificates, IDE setup, platform notes, and observability integration.
 
-Siehe [API.md](API.md) für die vollständige API-Referenz.
+## API documentation
 
----
+See [API.md](API.md) (German) for the complete endpoint reference. The machine-
+readable OpenAPI 3.1 contract is available at
+[`openapi/portal-v1.json`](openapi/portal-v1.json).
 
-## Autorisierung
+## Authorization
 
-Jede Ressource ist über eine dedizierte Laravel-Policy abgesichert (`app/Policies/`), nicht nur durch Filterung in der Auflistung:
+Every resource is protected by a dedicated Laravel Policy in `app/Policies`.
 
-| Aktion | Admin | Agent | Requester/Owner |
+| Action | Administrator | Agent | Requester/owner |
 |---|---|---|---|
-| Ticket ansehen | ✓ | ✓ | ✓ eigenes |
-| Ticket bearbeiten/zuweisen/Status ändern | ✓ | ✓ | ✗ |
-| Öffentlich kommentieren | ✓ | ✓ | ✓ eigenes |
-| Intern kommentieren | ✓ | ✓ | ✗ |
-| Asset ansehen | ✓ | ✓ | ✓ zugewiesenes |
-| Asset anlegen/bearbeiten/zuweisen | ✓ | ✓ | ✗ |
-| Asset löschen | ✓ | ✗ | ✗ |
-| Wissensartikel-Entwurf anlegen/bearbeiten | ✓ | ✓ | ✓ eigener |
-| Wissensartikel veröffentlichen/archivieren | ✓ | ✓ | ✗ |
-| Wissensartikel löschen | ✓ (alle) | ✓ (eigene) | ✓ (eigener Entwurf) |
-
----
+| View ticket | Yes | Yes | Own tickets only |
+| Edit, assign, or transition ticket | Yes | Yes | No |
+| Add public comment | Yes | Yes | Own tickets only |
+| Add internal comment | Yes | Yes | No |
+| View asset | Yes | Yes | Assigned assets only |
+| Create, edit, or assign asset | Yes | Yes | No |
+| Delete asset | Yes | No | No |
+| Create or edit knowledge draft | Yes | Yes | Own drafts only |
+| Publish or archive knowledge article | Yes | Yes | No |
+| Delete knowledge article | All | Own articles | Own drafts only |
 
 ## Observability
 
-ISD ist an einen separaten, eigenständigen `observability-stack` (Prometheus/Grafana/Loki) angebunden — einseitig über `host.docker.internal`, ohne gemeinsames Docker-Netzwerk:
+ISD integrates with the separate
+[`observability-stack`](https://github.com/wilke26/observability-stack)
+through `host.docker.internal`; the stacks do not share a Docker network.
 
+```text
+Prometheus :9090 ── GET /metrics + bearer token ──> ISD :80
+ISD ── HTTP push ──> Loki :3100
+ISD ── request counters ──> Redis
+Grafana :3000 ──> Prometheus and Loki
 ```
-Prometheus :9090 ──GET /metrics + Bearer-Token──> ISD :80
-ISD ──HTTP Push──> Loki :3100
-ISD ──Redis-Zähler──> Redis (Request-Rate/Latenz)
-Grafana :3000 ──> Prometheus, Loki
-```
 
-- **Metriken:** `isd_tickets_by_status`, `isd_http_requests_total`, `isd_http_request_duration_seconds_{sum,count}`; `/metrics` ist mit einem separaten Bearer-Token geschützt
-- **Logs:** strukturierte JSON-Zeilen pro abgeschlossenem Request, mit `request_id` als durchsuchbarem JSON-Feld (bewusst kein Loki-Label, um Kardinalitätsexplosion zu vermeiden)
-- **Request-ID-Korrelation:** Response-Header `X-Request-Id` → LogQL-Suche `{job="isd"} | json | request_id="..."`
+- **Metrics:** `isd_tickets_by_status`, `isd_http_requests_total`, and
+  `isd_http_request_duration_seconds_{sum,count}`; `/metrics` requires a dedicated
+  bearer token
+- **Logs:** structured JSON for every completed request, with `request_id` retained
+  as a searchable JSON field rather than a high-cardinality Loki label
+- **Correlation:** follow `X-Request-Id` from the response into the LogQL query
+  `{job="isd"} | json | request_id="..."`
 
-Details zur Einrichtung siehe [INSTALLATION.md](INSTALLATION.md#observability-anbindung).
-
----
+See the [observability section](INSTALLATION.md#observability-anbindung) of the
+installation guide for configuration details.
 
 ## Tests
 
 ```bash
-# Alle Tests ausführen
+# Complete test suite
 docker compose --env-file .env.docker exec app php artisan test
 
-# Einzelne Test-Suite
+# Individual suites
 docker compose --env-file .env.docker exec app php artisan test --testsuite=Unit
 docker compose --env-file .env.docker exec app php artisan test --testsuite=Feature
 
-# Mit Coverage-Report
+# Coverage report
 docker compose --env-file .env.docker exec app php artisan test --coverage
 ```
 
-Die verbindliche, stets aktuelle Testzahl steht im CI-Lauf. Die Suite enthält unter anderem dedizierte Tests für die Ticket-Status-Übergangsmatrix, den Loki-Log-Handler und Autorisierungs-Grenzfälle.
+The authoritative test count is shown by the latest CI run. The suite includes
+dedicated coverage for ticket state transitions, the Loki log handler,
+authorization boundaries, concurrency rules, and database constraints.
 
-Tests laufen gegen eine SQLite-In-Memory-Datenbank (`phpunit.xml`) und sind vollständig unabhängig von den Entwicklungsdaten.
+Tests use an in-memory SQLite database through `phpunit.xml` and do not access
+development data.
 
----
+## Database schema
 
-## Datenbankschema
+The PlantUML schema at `database/schema/it_service_desk.puml` can be rendered with
+an IDE plugin or at [plantuml.com](https://www.plantuml.com/plantuml).
 
-Das Schema (`database/schema/it_service_desk.puml`) kann mit dem PlantUML-Plugin in PHPStorm oder unter [plantuml.com](https://www.plantuml.com/plantuml) gerendert werden.
-
-Tabellen-Übersicht:
-
-| Bereich | Tabellen |
+| Area | Tables |
 |---|---|
-| Auth | `users`, `roles`, `role_user`, `personal_access_tokens` |
-| Assets | `assets`, `asset_categories`, `asset_statuses`, `asset_assignments`, `licenses`, `license_assignments` |
+| Authentication | `users`, `roles`, `role_user`, `personal_access_tokens` |
+| Assets and licenses | `assets`, `asset_categories`, `asset_statuses`, `asset_assignments`, `licenses`, `license_assignments` |
 | Tickets | `tickets`, `ticket_categories`, `ticket_comments`, `ticket_attachments`, `ticket_history` |
-| Wissensdatenbank | `kb_articles`, `kb_categories`, `kb_article_tag`, `tags` |
-| Laravel intern | `migrations`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `sessions` |
-
----
+| Knowledge base | `kb_articles`, `kb_categories`, `kb_article_tag`, `tags` |
+| Laravel internals | `migrations`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `sessions` |
 
 ## CI/CD
 
-GitHub Actions Pipeline (`.github/workflows/ci.yml`):
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs for pushes and pull
+requests targeting `main` and `develop`.
 
-| Job | Beschreibung |
+| Job | Purpose |
 |---|---|
-| `build-production-image` | Docker-Produktions-Image bauen |
-| `test` | PHPUnit-Tests gegen MySQL + Redis |
-| `static-analysis` | Laravel Pint (Codestyle) + PHPStan Level 5 (**verbindlich**, kein `continue-on-error` mehr) |
-| `fresh-checkout-smoke-test` | README-Schnellstart gegen einen frischen Checkout ausführen |
+| `build-production-image` | Build the production container image |
+| `test` | Run PHPUnit against MySQL and Redis |
+| `static-analysis` | Enforce Laravel Pint and PHPStan/Larastan level 5 and audit dependencies |
+| `fresh-checkout-smoke-test` | Reproduce the documented quick start from a clean checkout |
 
-Wird ausgelöst bei Push/PR auf `main` und `develop`.
+## Project structure
 
----
-
-## Projektstruktur
-
-```
+```text
 isd/
 ├── app/
-│   ├── Enums/              # PHP 8.1 Backed Enums (TicketStatus inkl. Übergangsmatrix, TicketPriority, ArticleStatus)
-│   ├── Exceptions/         # InvalidTicketStatusTransitionException (→ HTTP 409)
+│   ├── Enums/                    Domain enums and ticket transition matrix
+│   ├── Exceptions/               Domain exceptions mapped to HTTP responses
 │   ├── Http/
-│   │   ├── Controllers/Api/V1/   # API-Controller
+│   │   ├── Controllers/Api/V1/   Versioned API controllers
 │   │   ├── Controllers/MetricsController.php
-│   │   ├── Middleware/            # AssignRequestId, RecordRequestMetrics
-│   │   ├── Requests/Api/         # Form Requests (getrennte Store-/Update-Validierung)
-│   │   └── Resources/Api/        # API Resources (JSON-Transformation)
-│   ├── Logging/            # LokiHandler (custom Monolog-Handler)
-│   ├── Models/             # Eloquent Models (17 Models)
-│   ├── Policies/           # TicketPolicy, AssetPolicy, KbArticlePolicy
-│   └── Services/           # Service Layer (Geschäftslogik)
+│   │   ├── Middleware/            Request IDs and metrics
+│   │   ├── Requests/Api/          Separate create and update validation
+│   │   └── Resources/Api/         JSON resource transformation
+│   ├── Logging/                  Loki integration
+│   ├── Models/                   Eloquent models
+│   ├── Policies/                 Resource authorization
+│   └── Services/                 Domain mutations and workflows
 ├── database/
-│   ├── factories/          # Model Factories für Tests
-│   ├── migrations/         # inkl. additiver Migrationen für neue Enum-Werte
-│   └── seeders/            # Testdaten
+│   ├── factories/
+│   ├── migrations/
+│   └── seeders/
 ├── docker/
-│   ├── caddy/Caddyfile     # FrankenPHP/Caddy-Konfiguration
-│   └── php/                # PHP-Konfiguration (dev/prod)
+│   ├── caddy/Caddyfile
+│   └── php/
+├── openapi/portal-v1.json        OpenAPI 3.1 contract for the requester portal
 ├── routes/
-│   ├── api.php             # API-Routen v1
-│   └── web.php             # /metrics
+│   ├── api.php
+│   └── web.php
 ├── tests/
-│   ├── Feature/            # Feature-Tests (API-Endpunkte, Autorisierung)
-│   └── Unit/               # Unit-Tests (Services, Enums, Logging)
-├── .github/workflows/      # GitHub Actions CI
-├── docker-compose.yml      # Entwicklungsumgebung (Ports an 127.0.0.1 gebunden)
-├── docker-compose.ci.yml   # CI-Override
-├── Dockerfile              # Multi-Stage Build (dev/prod, Dev-Container als Non-Root-User)
-├── phpstan.neon            # PHPStan-Konfiguration
-└── pint.json               # Laravel Pint-Konfiguration
+│   ├── Feature/
+│   └── Unit/
+├── .github/workflows/ci.yml
+├── docker-compose.yml
+├── docker-compose.ci.yml
+├── Dockerfile
+├── phpstan.neon
+└── pint.json
 ```
+
+## License
+
+This project is available under the terms in [LICENSE](LICENSE).
