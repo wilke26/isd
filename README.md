@@ -65,6 +65,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 ### REST-API
 - Versionierte API (`/api/v1/`) für **Tickets, Assets und Wissensartikel** inklusive Workflow-Endpunkten (Submit/Publish/Archive, Asset-Zuweisung)
 - JSON-Antworten mit Paginierung, Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
+- Rate-Limiting über `throttle:api` pro Benutzer beziehungsweise IP auf allen authentifizierten Routen; zusätzlich schützt `throttle:login` den Login-Endpunkt
 - Für Benutzer, Rollen, Berechtigungen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte. Lizenzen werden bewusst ausschließlich intern über das Filament-Panel verwaltet; das Requester-Portal erhält weder Lizenzschlüssel noch Bestandsdaten.
 
 ### Observability
@@ -286,6 +287,7 @@ GitHub Actions Pipeline (`.github/workflows/ci.yml`):
 | `build-production-image` | Docker-Produktions-Image bauen |
 | `test` | PHPUnit-Tests gegen MySQL + Redis |
 | `static-analysis` | Laravel Pint (Codestyle) + PHPStan Level 5 (**verbindlich**, kein `continue-on-error` mehr) |
+| `fresh-checkout-smoke-test` | README-Schnellstart gegen einen frischen Checkout ausführen |
 
 Wird ausgelöst bei Push/PR auf `main` und `develop`.
 
