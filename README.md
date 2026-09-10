@@ -65,7 +65,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 ### REST-API
 - Versionierte API (`/api/v1/`) für **Tickets, Assets und Wissensartikel** inklusive Workflow-Endpunkten (Submit/Publish/Archive, Asset-Zuweisung)
 - JSON-Antworten mit Paginierung, Filtermöglichkeiten nach Status, Priorität, Kategorie, Volltext
-- Rate-Limiting über `throttle:api` pro Benutzer beziehungsweise IP auf allen authentifizierten Routen; zusätzlich schützt `throttle:login` den Login-Endpunkt
+- Rate-Limiting über `throttle:api` pro authentifiziertem Benutzer auf allen geschützten API-Routen; zusätzlich begrenzt `throttle:login` Login-Versuche je Kombination aus E-Mail-Adresse und IP-Adresse
 - Für Benutzer, Rollen, Berechtigungen sowie Asset-/Ticket-Kategorien und -Status existieren aktuell **keine** eigenen API-Endpunkte. Lizenzen werden bewusst ausschließlich intern über das Filament-Panel verwaltet; das Requester-Portal erhält weder Lizenzschlüssel noch Bestandsdaten.
 
 ### Observability

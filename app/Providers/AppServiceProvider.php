@@ -24,9 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Combines email and IP: prevents both many attempts from a single
-        // IP with varying email addresses and credential stuffing of the
-        // same email address across many different IPs.
+        // Limit repeated attempts for each email/IP pair without making
+        // unrelated users behind the same shared IP consume one bucket.
+        // This is deliberately not a standalone per-email or per-IP limit.
         RateLimiter::for('login', function (Request $request) {
             $key = strtolower((string) $request->input('email')) . '|' . $request->ip();
 
