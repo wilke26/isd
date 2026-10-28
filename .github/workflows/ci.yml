@@ -33,9 +33,33 @@ jobs:
           target: production
           push: false
           load: true
+          pull: true
           tags: it-service-desk/app:prod-ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify PHP security floor and production hardening
+        run: |
+          docker run --rm --entrypoint php it-service-desk/app:prod-ci -r '
+            $minimum = "8.5.12";
+            $expected = [
+              "session.upload_progress.enabled" => "",
+              "fatal_error_backtraces" => "",
+            ];
+            $actual = ini_get_all(null, false);
+
+            if (version_compare(PHP_VERSION, $minimum, "<")) {
+              fwrite(STDERR, "PHP ".PHP_VERSION." is below security floor {$minimum}\n");
+              exit(1);
+            }
+
+            foreach ($expected as $name => $value) {
+              if (!array_key_exists($name, $actual) || (string) $actual[$name] !== $value) {
+                fwrite(STDERR, "Unexpected {$name} value\n");
+                exit(1);
+              }
+            }
+          '
 
       - name: Verify production image contains no local secrets or development artifacts
         run: |
@@ -118,6 +142,7 @@ jobs:
           target: development
           push: false
           load: true
+          pull: true
           tags: it-service-desk/app:dev-ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -207,7 +232,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.5"
+          php-version: "8.5.12"
           tools: composer:v2
           coverage: none
 
@@ -316,7 +341,7 @@ jobs:
       # --no-cache: verhindert, dass ein zwischengespeicherter Layer eine
       # kaputte Dockerfile-Änderung (z.B. Volume-Berechtigungen) verdeckt.
       - name: Build image from scratch (no layer cache)
-        run: docker compose --env-file .env.docker build --no-cache
+        run: docker compose --env-file .env.docker build --pull --no-cache
 
       - name: Start the full stack
         run: docker compose --env-file .env.docker up -d

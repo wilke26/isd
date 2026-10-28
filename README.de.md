@@ -81,7 +81,7 @@ Ein vollständiges **IT-Service-Desk-System mit Asset-Management**. Das System e
 
 | Schicht | Technologie |
 |---|---|
-| Runtime | PHP 8.5 |
+| Runtime | PHP 8.5.12+ |
 | Framework | **Laravel 13** |
 | Webserver | FrankenPHP + Caddy |
 | Datenbank | MySQL 8.4 |
@@ -177,7 +177,7 @@ set_env_var MAIL_PORT 1025
 set_env_var METRICS_TOKEN "$(openssl rand -hex 32)"
 set_env_var ISD_DEMO_SEEDING_ENABLED true
 
-docker compose --env-file .env.docker build
+docker compose --env-file .env.docker build --pull
 docker compose --env-file .env.docker up -d
 docker compose --env-file .env.docker exec app composer install
 docker compose --env-file .env.docker exec app php artisan key:generate

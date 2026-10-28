@@ -188,7 +188,7 @@ Ab hier **immer** `docker compose --env-file .env.docker ...` verwenden (nicht `
 ## Schritt 5 — Docker-Image bauen
 
 ```bash
-docker compose --env-file .env.docker build
+docker compose --env-file .env.docker build --pull
 ```
 
 Beim ersten Aufruf werden das FrankenPHP-Basis-Image und alle PHP-Extensions heruntergeladen (~3 min).
@@ -283,7 +283,7 @@ docker compose --env-file .env.docker exec app \
 2. **Docker Compose** auswählen
 3. Server: `Docker`, Configuration files: `./docker-compose.yml`, Service: `app`
 4. Lifecycle: **"Connect to existing container (docker-compose exec)"**
-5. PHP-Version 8.5.x und Xdebug 3.x werden automatisch erkannt
+5. PHP-Version 8.5.12 oder neuer und Xdebug 3.x werden automatisch erkannt
 
 ### Xdebug
 
@@ -374,7 +374,7 @@ sudo lsof -nP -iTCP:443 -sTCP:LISTEN
 ```bash
 # In docker-compose.yml beim app-Service ergänzen:
 platform: linux/amd64
-docker compose --env-file .env.docker build
+docker compose --env-file .env.docker build --pull
 ```
 
 **`chown: invalid group: 'appuser:appuser'` bei manuellen Eingriffen im Container:**
