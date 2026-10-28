@@ -5,6 +5,11 @@
 # -----------------------------------------------------------------
 FROM dunglas/frankenphp:1-php8.5-bookworm AS base
 
+# CVE-2026-109618 / CVE-2026-109619 affect web-facing PHP runtimes before
+# application code executes. Fail the build if the moving FrankenPHP base tag
+# ever resolves to an older, vulnerable PHP patch level.
+RUN php -r 'if (PHP_VERSION_ID < 80512) { fwrite(STDERR, sprintf("PHP %s is below the required security floor 8.5.12\n", PHP_VERSION)); exit(1); }'
+
 WORKDIR /app
 
 # System-Pakete, die für PHP-Extensions / Composer benötigt werden
