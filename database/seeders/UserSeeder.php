@@ -8,11 +8,18 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use LogicException;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! DemoSeedingGuard::allowsFixtures()) {
+            throw new LogicException(
+                'Development users require local or testing environment configuration, no Artisan --env override, and ISD_DEMO_SEEDING_ENABLED=true.',
+            );
+        }
+
         $adminRole = Role::where('slug', 'admin')->first();
         $agentRole = Role::where('slug', 'agent')->first();
         $userRole = Role::where('slug', 'user')->first();

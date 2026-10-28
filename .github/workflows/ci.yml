@@ -294,6 +294,7 @@ jobs:
           set_env_var SESSION_DRIVER redis
           set_env_var MAIL_HOST mailpit
           set_env_var MAIL_PORT 1025
+          set_env_var ISD_DEMO_SEEDING_ENABLED true
           metrics_token="$(openssl rand -hex 32)"
           set_env_var METRICS_TOKEN "$metrics_token"
           echo "METRICS_TOKEN=$metrics_token" >> "$GITHUB_ENV"

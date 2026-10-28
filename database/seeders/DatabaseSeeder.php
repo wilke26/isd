@@ -11,7 +11,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            RoleSeeder::class,   // Rollen & Berechtigungen zuerst
+            RoleSeeder::class,
+            AssetReferenceSeeder::class,
+        ]);
+
+        if (! DemoSeedingGuard::allowsFixtures()) {
+            return;
+        }
+
+        $this->call([
             UserSeeder::class,   // Benutzer benötigen Rollen
             AssetSeeder::class,  // Assets & Zuweisungen
             TicketSeeder::class, // Tickets benötigen User & Assets

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\CreateAdmin;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\RecordRequestMetrics;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+    ->withCommands([
+        CreateAdmin::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Applied to every request, including /up and /metrics — request ID
         // first, so it's available in all subsequent log lines.

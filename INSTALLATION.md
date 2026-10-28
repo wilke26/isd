@@ -90,6 +90,7 @@ set_env_var SESSION_DRIVER redis
 
 set_env_var MAIL_HOST mailpit
 set_env_var MAIL_PORT 1025
+set_env_var ISD_DEMO_SEEDING_ENABLED true
 ```
 
 `CORS_ALLOWED_ORIGINS` enthält eine kommaseparierte Allowlist der Portal-
@@ -249,6 +250,19 @@ curl -s -X POST https://isd.local/api/v1/auth/login \
 ---
 
 ## Testdaten (nach `db:seed`)
+
+Die folgenden Konten werden nur mit `APP_ENV=local` oder `APP_ENV=testing` und
+der expliziten Einstellung `ISD_DEMO_SEEDING_ENABLED=true` angelegt. In allen
+anderen Fällen legt der Standard-Seeder ausschließlich die Rollen sowie die
+für den regulären Betrieb notwendigen Asset-Kategorien und -Status an. Die
+globale Artisan-Option `--env` kann die Testdaten nicht aktivieren. Der erste
+produktive Administrator wird ohne Demo-Passwort über einen verdeckten
+Prompt erstellt:
+
+```bash
+docker compose --env-file .env.docker exec app \
+  php artisan isd:create-admin --email=owner@example.com --name="System Administrator"
+```
 
 | Rolle | E-Mail | Passwort |
 |---|---|---|
