@@ -220,8 +220,9 @@ Seeded development accounts:
 These credentials are development fixtures and must not be used in production.
 The default seeder creates them only when `APP_ENV` is `local` or `testing`
 **and** `ISD_DEMO_SEEDING_ENABLED=true` is set explicitly. In all other cases
-it seeds roles without demo users. Artisan's global `--env` option cannot enable
-the fixtures. Create the initial production administrator
+it seeds only roles and the asset categories/statuses required for normal use,
+without demo users or assets. Artisan's global `--env` option cannot enable the
+fixtures. Create the initial production administrator
 interactively instead:
 
 ```bash

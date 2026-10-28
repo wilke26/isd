@@ -23,9 +23,25 @@ class ProductionBootstrapTest extends TestCase
         $this->app->make(DatabaseSeeder::class)->run();
 
         $this->assertDatabaseCount('roles', 3);
+        $this->assertDatabaseCount('asset_categories', 7);
+        $this->assertDatabaseCount('asset_statuses', 5);
         $this->assertDatabaseCount('users', 0);
         $this->assertDatabaseCount('assets', 0);
         $this->assertDatabaseCount('tickets', 0);
+    }
+
+    public function test_production_reference_data_seeding_is_idempotent(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'production');
+        config()->set('isd.demo_seeding_enabled', false);
+
+        $this->app->make(DatabaseSeeder::class)->run();
+        $this->app->make(DatabaseSeeder::class)->run();
+
+        $this->assertDatabaseCount('roles', 3);
+        $this->assertDatabaseCount('asset_categories', 7);
+        $this->assertDatabaseCount('asset_statuses', 5);
+        $this->assertDatabaseCount('assets', 0);
     }
 
     public function test_user_seeder_rejects_direct_execution_in_production(): void
@@ -124,6 +140,14 @@ class ProductionBootstrapTest extends TestCase
             self::assertSame(
                 3,
                 (int) $connection->query('SELECT COUNT(*) FROM roles')->fetchColumn(),
+            );
+            self::assertSame(
+                7,
+                (int) $connection->query('SELECT COUNT(*) FROM asset_categories')->fetchColumn(),
+            );
+            self::assertSame(
+                5,
+                (int) $connection->query('SELECT COUNT(*) FROM asset_statuses')->fetchColumn(),
             );
         } finally {
             if (is_file($database)) {

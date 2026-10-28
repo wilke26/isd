@@ -10,7 +10,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
+        $this->call([
+            RoleSeeder::class,
+            AssetReferenceSeeder::class,
+        ]);
 
         if (! DemoSeedingGuard::allowsFixtures()) {
             return;

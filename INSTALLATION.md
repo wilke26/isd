@@ -253,7 +253,8 @@ curl -s -X POST https://isd.local/api/v1/auth/login \
 
 Die folgenden Konten werden nur mit `APP_ENV=local` oder `APP_ENV=testing` und
 der expliziten Einstellung `ISD_DEMO_SEEDING_ENABLED=true` angelegt. In allen
-anderen Fällen legt der Standard-Seeder ausschließlich die Rollen an. Die
+anderen Fällen legt der Standard-Seeder ausschließlich die Rollen sowie die
+für den regulären Betrieb notwendigen Asset-Kategorien und -Status an. Die
 globale Artisan-Option `--env` kann die Testdaten nicht aktivieren. Der erste
 produktive Administrator wird ohne Demo-Passwort über einen verdeckten
 Prompt erstellt:

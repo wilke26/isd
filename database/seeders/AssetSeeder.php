@@ -15,31 +15,13 @@ class AssetSeeder extends Seeder
 {
     public function run(): void
     {
-        // ─── Status ───────────────────────────────────────────────
-        $statuses = [
-            ['name' => 'Verfügbar',       'color' => '#22c55e'],
-            ['name' => 'In Verwendung',   'color' => '#3b82f6'],
-            ['name' => 'In Reparatur',    'color' => '#f59e0b'],
-            ['name' => 'Ausgemustert',    'color' => '#ef4444'],
-            ['name' => 'Lager',           'color' => '#8b5cf6'],
-        ];
+        $this->call(AssetReferenceSeeder::class);
 
-        foreach ($statuses as $statusData) {
-            AssetStatus::firstOrCreate(['name' => $statusData['name']], $statusData);
-        }
-
-        $available = AssetStatus::where('name', 'Verfügbar')->first();
-        $inUse = AssetStatus::where('name', 'In Verwendung')->first();
-
-        // ─── Categories (hierarchical) ───────────────────────────────
-        $hardware = AssetCategory::firstOrCreate(['name' => 'Hardware'], ['parent_id' => null]);
-        $software = AssetCategory::firstOrCreate(['name' => 'Software'], ['parent_id' => null]);
-        $network = AssetCategory::firstOrCreate(['name' => 'Netzwerk'], ['parent_id' => null]);
-
-        $laptops = AssetCategory::firstOrCreate(['name' => 'Laptops'], ['parent_id' => $hardware->id]);
-        $servers = AssetCategory::firstOrCreate(['name' => 'Server'], ['parent_id' => $hardware->id]);
-        $monitors = AssetCategory::firstOrCreate(['name' => 'Monitore'], ['parent_id' => $hardware->id]);
-        $switches = AssetCategory::firstOrCreate(['name' => 'Switches'], ['parent_id' => $network->id]);
+        $available = AssetStatus::where('name', 'Verfügbar')->firstOrFail();
+        $inUse = AssetStatus::where('name', 'In Verwendung')->firstOrFail();
+        $laptops = AssetCategory::where('name', 'Laptops')->firstOrFail();
+        $servers = AssetCategory::where('name', 'Server')->firstOrFail();
+        $switches = AssetCategory::where('name', 'Switches')->firstOrFail();
 
         // ─── Assets ────────────────────────────────────────────────
         $assets = [

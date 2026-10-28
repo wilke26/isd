@@ -196,8 +196,10 @@ Login-Zugangsdaten (Testdaten):
 Diese Konten werden ausschließlich mit `APP_ENV=local` oder
 `APP_ENV=testing` **und** der expliziten Einstellung
 `ISD_DEMO_SEEDING_ENABLED=true` angelegt. In allen anderen Fällen legt der
-Standard-Seeder nur die Rollen an. Der erste produktive Administrator wird
-interaktiv erstellt:
+Standard-Seeder nur die Rollen sowie die für den regulären Betrieb notwendigen
+Asset-Kategorien und -Status an. Die globale Artisan-Option `--env` kann die
+Testdaten nicht aktivieren. Der erste produktive Administrator wird interaktiv
+erstellt:
 
 ```bash
 php artisan isd:create-admin --email=owner@example.com --name="System Administrator"
