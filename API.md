@@ -41,6 +41,10 @@ den üblichen `Retry-After`-/Rate-Limit-Headern.
 Authentifiziert einen Benutzer und gibt einen API-Token zurück.
 
 **Request:**
+
+Das folgende Konto ist ausschließlich ein lokales Entwicklungsbeispiel; der
+Produktions-Bootstrap erzeugt individuelle Administrator-Zugangsdaten.
+
 ```json
 {
   "email": "admin@isd.local",

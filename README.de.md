@@ -175,6 +175,7 @@ set_env_var SESSION_DRIVER redis
 set_env_var MAIL_HOST mailpit
 set_env_var MAIL_PORT 1025
 set_env_var METRICS_TOKEN "$(openssl rand -hex 32)"
+set_env_var ISD_DEMO_SEEDING_ENABLED true
 
 docker compose --env-file .env.docker build
 docker compose --env-file .env.docker up -d
@@ -191,6 +192,19 @@ Login-Zugangsdaten (Testdaten):
 - Admin: `admin@isd.local` / `password`
 - Agent: `a.mueller@isd.local` / `password`
 - Benutzer: `c.weber@isd.local` / `password`
+
+Diese Konten werden ausschließlich mit `APP_ENV=local` oder
+`APP_ENV=testing` **und** der expliziten Einstellung
+`ISD_DEMO_SEEDING_ENABLED=true` angelegt. In allen anderen Fällen legt der
+Standard-Seeder nur die Rollen an. Der erste produktive Administrator wird
+interaktiv erstellt:
+
+```bash
+php artisan isd:create-admin --email=owner@example.com --name="System Administrator"
+```
+
+Das Passwort wird verdeckt abgefragt und kann nicht als Kommandozeilenoption
+übergeben werden.
 
 ---
 
