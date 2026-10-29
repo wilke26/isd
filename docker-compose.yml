@@ -1,6 +1,37 @@
 name: it-service-desk
 
 services:
+  # Bestehende Caddy-Volumes behalten ihre numerischen Besitzer auch dann,
+  # wenn das Dev-Image später mit einer anderen Host-UID/GID neu gebaut wird.
+  # Dieser kurzlebige Dienst gleicht die Eigentümerschaft vor jedem `up` ab,
+  # ohne Zertifikate oder andere bereits vorhandene Daten zu ersetzen.
+  caddy-volume-init:
+    image: it-service-desk/app:dev
+    user: "0:0"
+    restart: "no"
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+    security_opt:
+      - no-new-privileges:true
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        target_uid="$$(id -u appuser)"
+        target_gid="$$(id -g appuser)"
+        chown -R "$${target_uid}:$${target_gid}" /data /config
+        chmod -R u+rwX /data /config
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
   app:
     build:
       context: .
@@ -36,6 +67,8 @@ services:
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
       XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
     depends_on:
+      caddy-volume-init:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:

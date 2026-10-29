@@ -383,10 +383,24 @@ Auf macOS kollidiert die Host-GID `20` (Gruppe `staff`) mit der Debian-Systemgru
 docker compose --env-file .env.docker exec -u root app chown -R 501:20 <Pfad>
 ```
 
-**Vendor-/Volume-Verzeichnis leer oder nicht beschreibbar nach Volume-Neuanlage:**
-`vendor-data`, `node-modules-data`, `caddy-data`, `caddy-config` sind benannte Docker-Volumes. Werden sie neu angelegt (z. B. nach `docker compose down -v`), gehören sie zunächst `root`, der Dev-Container läuft aber als `appuser`:
+**Caddy-Volume nach einem Neuaufbau des Images nicht beschreibbar:**
+`caddy-data` und `caddy-config` behalten beim Neuaufbau des Images ihre vorhandenen Daten und numerischen Besitzer. Vor dem Start von `app` liest der kurzlebige Service `caddy-volume-init` die tatsächliche UID/GID von `appuser` aus demselben Image und gleicht die Eigentümerschaft daran an. Das bewahrt insbesondere die bereits erzeugte lokale Caddy-CA und bleibt auch dann korrekt, wenn das Image noch nicht mit geänderten Werten aus `.env.docker` neu gebaut wurde. Nach Image-Änderungen deshalb mit `up -d` aktualisieren und nicht nur den bereits vorhandenen Container mit `start` starten:
 ```bash
-docker compose --env-file .env.docker exec -u root app chown -R 501:20 /app/vendor /app/node_modules /data /config
+docker compose --env-file .env.docker up -d
+docker compose --env-file .env.docker ps -a caddy-volume-init app
+```
+
+Der Initialisierungsdienst muss mit Exit-Code `0` beendet sein. Falls er fehlschlägt, startet `app` bewusst nicht; Diagnose:
+```bash
+docker compose --env-file .env.docker logs caddy-volume-init
+```
+
+Frische `vendor-data`- und `node-modules-data`-Volumes übernehmen ihre Eigentümerschaft weiterhin direkt aus dem Entwicklungs-Image. Vorhandene Abhängigkeiten lassen sich bei Bedarf ohne Verlust der Caddy-CA neu erzeugen:
+```bash
+docker compose --env-file .env.docker rm -sf app queue scheduler
+docker volume rm it-service-desk_vendor-data it-service-desk_node-modules-data
+docker compose --env-file .env.docker up -d
+docker compose --env-file .env.docker exec app composer install
 ```
 
 ---

@@ -343,8 +343,33 @@ jobs:
       - name: Build image from scratch (no layer cache)
         run: docker compose --env-file .env.docker build --pull --no-cache
 
+      # Simuliert ein Upgrade von einem Image, dessen appuser eine andere
+      # numerische UID/GID hatte. Der Sentinel steht stellvertretend für die
+      # bereits vorhandene lokale Caddy-CA und darf nicht verloren gehen.
+      - name: Seed existing Caddy volumes with legacy ownership
+        run: |
+          docker compose --env-file .env.docker run --rm --no-deps \
+            --user 0:0 --entrypoint sh app -ec '
+              printf "%s\n" "preserve-data" > /data/legacy-volume-sentinel
+              printf "%s\n" "preserve-config" > /config/legacy-volume-sentinel
+              chown -R 1234:1234 /data /config
+              chmod 600 /data/legacy-volume-sentinel /config/legacy-volume-sentinel
+            '
+
       - name: Start the full stack
         run: docker compose --env-file .env.docker up -d
+
+      - name: Verify legacy Caddy volumes are preserved and writable
+        run: |
+          docker compose --env-file .env.docker exec -T app sh -ec '
+            test "$(cat /data/legacy-volume-sentinel)" = "preserve-data"
+            test "$(cat /config/legacy-volume-sentinel)" = "preserve-config"
+            expected_owner="$(id -u):$(id -g)"
+            test "$(stat -c "%u:%g" /data)" = "$expected_owner"
+            test "$(stat -c "%u:%g" /config)" = "$expected_owner"
+            touch /data/volume-write-check /config/volume-write-check
+            rm /data/volume-write-check /config/volume-write-check
+          '
 
       - name: Wait for MySQL to be healthy
         run: |
@@ -352,10 +377,9 @@ jobs:
             'until docker inspect --format="{{.State.Health.Status}}" isd-mysql | grep -q healthy; do sleep 2; done'
 
       # Bewusst OHNE manuellen chown-Zwischenschritt für die benannten
-      # Volumes (vendor-data, caddy-data, ...) — genau das soll dieser Test
-      # verifizieren: dass sie ohne Nacharbeit funktionieren (siehe
-      # Dockerfile: Verzeichnisse werden vor USER appuser mit passenden
-      # Rechten angelegt).
+      # Volumes. Frische vendor-/node-Volumes übernehmen ihre Rechte aus dem
+      # Image; bestehende Caddy-Volumes werden vom caddy-volume-init-Service
+      # abgeglichen und behalten dabei ihren Inhalt.
       - name: Install Composer dependencies
         run: |
           docker compose --env-file .env.docker exec -T app sh -ec '
