@@ -184,6 +184,10 @@ docker compose --env-file .env.docker exec app php artisan key:generate
 docker compose --env-file .env.docker exec app php artisan migrate --seed
 ```
 
+Beim `up` gleicht der kurzlebige Service `caddy-volume-init` bestehende
+Caddy-Volumes an die tatsächliche UID/GID von `appuser` aus dem Image an. Die
+lokale CA und alle übrigen gespeicherten Caddy-Daten bleiben dabei erhalten.
+
 Anwendung erreichbar unter: **https://isd.local**
 Mailpit (E-Mail-Vorschau): http://localhost:8025
 Metriken: http://isd.local/metrics (Bearer-Token aus `METRICS_TOKEN` erforderlich)

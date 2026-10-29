@@ -9,6 +9,9 @@
 # Portbindung unkritisch.
 
 services:
+  caddy-volume-init:
+    image: it-service-desk/app:dev-ci
+
   app:
     build:
       target: development

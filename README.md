@@ -203,6 +203,10 @@ docker compose --env-file .env.docker exec app php artisan key:generate
 docker compose --env-file .env.docker exec app php artisan migrate --seed
 ```
 
+During `up`, the short-lived `caddy-volume-init` service reconciles existing
+Caddy volumes with the actual `appuser` UID/GID from the image while preserving
+the local CA and all other stored Caddy data.
+
 Services after setup:
 
 - Application: **https://isd.local**
